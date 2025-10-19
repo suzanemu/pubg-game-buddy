@@ -56,6 +56,21 @@ const Auth = () => {
         return;
       }
 
+      // Insert into user_roles first
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: codeData.role,
+        });
+
+      if (roleError) {
+        await supabase.auth.signOut();
+        toast.error("Failed to assign role");
+        return;
+      }
+
+      // Then create session
       const { error: sessionError } = await supabase
         .from("sessions")
         .insert({
