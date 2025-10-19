@@ -29,9 +29,26 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
     if (selectedTournament) {
       fetchTeams();
 
-      const interval = setInterval(fetchTeams, 5000);
+      // Set up real-time subscription for team updates
+      const channel = supabase
+        .channel('teams-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'teams',
+          },
+          () => {
+            // Refetch teams when any team is updated
+            fetchTeams();
+          }
+        )
+        .subscribe();
 
-      return () => clearInterval(interval);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [selectedTournament]);
 

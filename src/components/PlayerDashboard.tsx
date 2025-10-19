@@ -37,12 +37,29 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
   }, [userTeam?.tournament_id]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchUserTeam();
-    }, 5000);
+    // Set up real-time subscription for team updates
+    const channel = supabase
+      .channel('team-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'teams',
+        },
+        () => {
+          fetchUserTeam();
+          if (userTeam?.tournament_id) {
+            fetchTeams();
+          }
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
-  }, [userId]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, userTeam?.tournament_id]);
 
   const fetchUserTeam = async () => {
     const { data: sessionData, error: sessionError } = await supabase
