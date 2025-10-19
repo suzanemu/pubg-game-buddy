@@ -16,7 +16,7 @@ const Auth = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/");
+        navigate("/dashboard");
       }
     });
   }, [navigate]);
@@ -86,7 +86,7 @@ const Auth = () => {
       }
 
       toast.success("Login successful!");
-      navigate("/");
+      navigate("/dashboard");
     } catch (error) {
       toast.error("An error occurred");
     } finally {
