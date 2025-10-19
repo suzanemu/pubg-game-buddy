@@ -215,19 +215,31 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
       setUploadProgress("Analyzing screenshot with AI...");
 
       // Call AI analysis function
-      const { error: analysisError } = await supabase.functions.invoke("analyze-screenshot", {
-        body: {
+      try {
+        console.log("Calling analyze-screenshot function with:", {
           screenshot_url: urlData.publicUrl,
           screenshot_id: screenshotData.id,
           team_id: userTeam.id
-        }
-      });
+        });
 
-      if (analysisError) {
-        console.error("AI analysis error:", analysisError);
+        const { data: analysisData, error: analysisError } = await supabase.functions.invoke("analyze-screenshot", {
+          body: {
+            screenshot_url: urlData.publicUrl,
+            screenshot_id: screenshotData.id,
+            team_id: userTeam.id
+          }
+        });
+
+        if (analysisError) {
+          console.error("AI analysis error:", analysisError);
+          toast.error("Screenshot uploaded but AI analysis failed. Admin will verify manually.");
+        } else {
+          console.log("AI analysis success:", analysisData);
+          toast.success(`Screenshot analyzed! Match ${matchNumber} data extracted.`);
+        }
+      } catch (error) {
+        console.error("Exception during AI analysis:", error);
         toast.error("Screenshot uploaded but AI analysis failed. Admin will verify manually.");
-      } else {
-        toast.success(`Screenshot analyzed! Match ${matchNumber} data extracted.`);
       }
     }
 
