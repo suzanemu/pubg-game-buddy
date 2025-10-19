@@ -197,11 +197,42 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
 
     if (insertError) {
       toast.error("Failed to save match screenshot");
-    } else {
-      toast.success(`Screenshot uploaded for Match ${matchNumber}!`);
-      setMatchNumber(matchNumber + 1);
-      fetchUserTeam();
+      setUploading(false);
+      setUploadProgress("");
+      event.target.value = "";
+      return;
     }
+
+    // Get the inserted screenshot ID
+    const { data: screenshotData } = await supabase
+      .from("match_screenshots")
+      .select("id")
+      .eq("team_id", userTeam.id)
+      .eq("match_number", matchNumber)
+      .single();
+
+    if (screenshotData) {
+      setUploadProgress("Analyzing screenshot with AI...");
+
+      // Call AI analysis function
+      const { error: analysisError } = await supabase.functions.invoke("analyze-screenshot", {
+        body: {
+          screenshot_url: urlData.publicUrl,
+          screenshot_id: screenshotData.id,
+          team_id: userTeam.id
+        }
+      });
+
+      if (analysisError) {
+        console.error("AI analysis error:", analysisError);
+        toast.error("Screenshot uploaded but AI analysis failed. Admin will verify manually.");
+      } else {
+        toast.success(`Screenshot analyzed! Match ${matchNumber} data extracted.`);
+      }
+    }
+
+    setMatchNumber(matchNumber + 1);
+    fetchUserTeam();
 
     setUploading(false);
     setUploadProgress("");
