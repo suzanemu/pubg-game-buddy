@@ -253,7 +253,7 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/auth");
+    navigate("/");
   };
 
   if (!userTeam) {
