@@ -75,12 +75,7 @@ const Home = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Tournament Standings</h2>
-          <p className="text-muted-foreground">Live standings updated in real-time</p>
-        </div>
-
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
