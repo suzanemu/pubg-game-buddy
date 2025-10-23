@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,18 @@ const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [accessCode, setAccessCode] = useState("");
+  const isLoggingIn = useRef(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard");
+    // Check for existing session on mount
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !isLoggingIn.current) {
+        navigate("/dashboard", { replace: true });
       }
-    });
+    };
+    
+    checkSession();
   }, [navigate]);
 
   const handleAccessCode = async (e: React.FormEvent) => {
@@ -30,17 +35,22 @@ const Auth = () => {
     }
 
     setLoading(true);
+    isLoggingIn.current = true;
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
 
       if (authError) {
         toast.error("Authentication failed");
+        isLoggingIn.current = false;
+        setLoading(false);
         return;
       }
 
       if (!authData.user) {
         toast.error("Authentication failed");
+        isLoggingIn.current = false;
+        setLoading(false);
         return;
       }
 
@@ -53,6 +63,8 @@ const Auth = () => {
       if (codeError || !codeData) {
         await supabase.auth.signOut();
         toast.error("Invalid access code");
+        isLoggingIn.current = false;
+        setLoading(false);
         return;
       }
 
@@ -67,6 +79,8 @@ const Auth = () => {
       if (roleError) {
         await supabase.auth.signOut();
         toast.error("Failed to assign role");
+        isLoggingIn.current = false;
+        setLoading(false);
         return;
       }
 
@@ -82,15 +96,19 @@ const Auth = () => {
       if (sessionError) {
         await supabase.auth.signOut();
         toast.error("Failed to create session");
+        isLoggingIn.current = false;
+        setLoading(false);
         return;
       }
 
       toast.success("Login successful!");
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       toast.error("An error occurred");
+      isLoggingIn.current = false;
     } finally {
       setLoading(false);
+      isLoggingIn.current = false;
     }
   };
 
