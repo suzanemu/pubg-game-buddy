@@ -12,12 +12,50 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client for auth
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user from JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { screenshot_url, screenshot_id, team_id } = await req.json();
 
     if (!screenshot_url || !screenshot_id || !team_id) {
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify user owns this team
+    const { data: session, error: sessionError } = await supabaseClient
+      .from('sessions')
+      .select('team_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (sessionError || !session || session.team_id !== team_id) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden - You can only analyze screenshots for your own team" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -113,10 +151,8 @@ serve(async (req) => {
     const killPoints = kills;
     const totalPoints = placementPoints + killPoints;
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Use the same supabase client initialized earlier
+    const supabase = supabaseClient;
 
     // Update the screenshot record
     const { error: updateError } = await supabase

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -148,6 +149,23 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !userTeam) return;
+
+    // Validate inputs
+    const uploadSchema = z.object({
+      matchNumber: z.number().int().min(1).max(tournament?.total_matches || 18),
+      file: z.custom<File>((val) => val instanceof File)
+        .refine((file) => file.size <= 5 * 1024 * 1024, 'File must be less than 5MB')
+        .refine((file) => ['image/jpeg', 'image/png', 'image/jpg'].includes(file.type), 'Only JPG/PNG images allowed')
+    });
+
+    try {
+      uploadSchema.parse({ matchNumber, file });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
+    }
 
     if (tournament && matchNumber > tournament.total_matches) {
       toast.error(`Match number cannot exceed ${tournament.total_matches}`);

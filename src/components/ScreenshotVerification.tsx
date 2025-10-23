@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,21 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
 
   const handleUpdateScreenshot = async () => {
     if (!selectedScreenshot) return;
+
+    // Validate inputs
+    const matchDataSchema = z.object({
+      placement: z.number().int().min(1).max(18),
+      kills: z.number().int().min(0).max(50)
+    });
+
+    try {
+      matchDataSchema.parse({ placement: editPlacement, kills: editKills });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
+    }
 
     setUpdating(true);
 
