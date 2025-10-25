@@ -54,13 +54,11 @@ const Auth = () => {
         return;
       }
 
+      // Validate access code using secure database function
       const { data: codeData, error: codeError } = await supabase
-        .from("access_codes")
-        .select("role, team_id")
-        .eq("code", accessCode.trim().toUpperCase())
-        .single();
+        .rpc("validate_access_code", { _code: accessCode.trim().toUpperCase() });
 
-      if (codeError || !codeData) {
+      if (codeError || !codeData || codeData.length === 0) {
         await supabase.auth.signOut();
         toast.error("Invalid access code");
         isLoggingIn.current = false;
@@ -68,12 +66,14 @@ const Auth = () => {
         return;
       }
 
+      const { role, team_id } = codeData[0];
+
       // Insert into user_roles first
       const { error: roleError } = await supabase
         .from("user_roles")
         .insert({
           user_id: authData.user.id,
-          role: codeData.role,
+          role: role,
         });
 
       if (roleError) {
@@ -89,8 +89,8 @@ const Auth = () => {
         .from("sessions")
         .insert({
           user_id: authData.user.id,
-          role: codeData.role,
-          team_id: codeData.team_id,
+          role: role,
+          team_id: team_id,
         });
 
       if (sessionError) {

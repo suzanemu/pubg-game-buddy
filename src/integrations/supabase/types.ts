@@ -232,6 +232,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_access_code: {
+        Args: { _code: string }
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+          team_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "player"
