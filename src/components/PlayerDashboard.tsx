@@ -25,6 +25,7 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [uploadedMatches, setUploadedMatches] = useState<number>(0);
+  const [uploadStats, setUploadStats] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     fetchUserTeam();
@@ -147,125 +148,151 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !userTeam) return;
+    const files = event.target.files;
+    if (!files || files.length === 0 || !userTeam) return;
 
-    // Validate inputs
-    const uploadSchema = z.object({
-      matchNumber: z.number().int().min(1).max(tournament?.total_matches || 18),
-      file: z.custom<File>((val) => val instanceof File)
-        .refine((file) => file.size <= 5 * 1024 * 1024, 'File must be less than 5MB')
-        .refine((file) => ['image/jpeg', 'image/png', 'image/jpg'].includes(file.type), 'Only JPG/PNG images allowed')
-    });
+    // Limit to 4 files
+    const filesToUpload = Array.from(files).slice(0, 4);
+    
+    if (filesToUpload.length > 4) {
+      toast.error("You can only upload up to 4 screenshots at a time");
+      return;
+    }
 
-    try {
-      uploadSchema.parse({ matchNumber, file });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-        return;
+    // Validate all files
+    const fileSchema = z.custom<File>((val) => val instanceof File)
+      .refine((file) => file.size <= 5 * 1024 * 1024, 'File must be less than 5MB')
+      .refine((file) => ['image/jpeg', 'image/png', 'image/jpg'].includes(file.type), 'Only JPG/PNG images allowed');
+
+    for (const file of filesToUpload) {
+      try {
+        fileSchema.parse(file);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          toast.error(`${file.name}: ${error.errors[0].message}`);
+          return;
+        }
       }
-    }
-
-    if (tournament && matchNumber > tournament.total_matches) {
-      toast.error(`Match number cannot exceed ${tournament.total_matches}`);
-      return;
-    }
-
-    const { data: existing } = await supabase
-      .from("match_screenshots")
-      .select("id")
-      .eq("team_id", userTeam.id)
-      .eq("match_number", matchNumber)
-      .single();
-
-    if (existing) {
-      toast.error(`You have already uploaded a screenshot for Match ${matchNumber}`);
-      return;
     }
 
     setUploading(true);
-    setUploadProgress("Uploading screenshot...");
+    setUploadStats({ current: 0, total: filesToUpload.length });
+    
+    let currentMatchNum = matchNumber;
+    const uploadResults: Array<{ success: boolean; matchNum: number }> = [];
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${userTeam.id}/${matchNumber}-${Date.now()}.${fileExt}`;
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      
+      setUploadStats({ current: i + 1, total: filesToUpload.length });
+      setUploadProgress(`Uploading screenshot ${i + 1} of ${filesToUpload.length}...`);
 
-    const { error: uploadError } = await supabase.storage
-      .from("screenshots")
-      .upload(fileName, file);
-
-    if (uploadError) {
-      toast.error("Failed to upload screenshot");
-      setUploading(false);
-      setUploadProgress("");
-      return;
-    }
-
-    const { data: urlData } = supabase.storage
-      .from("screenshots")
-      .getPublicUrl(fileName);
-
-    setUploadProgress("Saving match data...");
-
-    const { error: insertError } = await supabase.from("match_screenshots").insert({
-      team_id: userTeam.id,
-      match_number: matchNumber,
-      screenshot_url: urlData.publicUrl,
-    });
-
-    if (insertError) {
-      toast.error("Failed to save match screenshot");
-      setUploading(false);
-      setUploadProgress("");
-      event.target.value = "";
-      return;
-    }
-
-    // Get the inserted screenshot ID
-    const { data: screenshotData } = await supabase
-      .from("match_screenshots")
-      .select("id")
-      .eq("team_id", userTeam.id)
-      .eq("match_number", matchNumber)
-      .single();
-
-    if (screenshotData) {
-      setUploadProgress("Analyzing screenshot with AI...");
-
-      // Call AI analysis function
-      try {
-        console.log("Calling analyze-screenshot function with:", {
-          screenshot_url: urlData.publicUrl,
-          screenshot_id: screenshotData.id,
-          team_id: userTeam.id
-        });
-
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke("analyze-screenshot", {
-          body: {
-            screenshot_url: urlData.publicUrl,
-            screenshot_id: screenshotData.id,
-            team_id: userTeam.id
-          }
-        });
-
-        if (analysisError) {
-          console.error("AI analysis error:", analysisError);
-          toast.error("Screenshot uploaded but AI analysis failed. Admin will verify manually.");
-        } else {
-          console.log("AI analysis success:", analysisData);
-          toast.success(`Screenshot analyzed! Match ${matchNumber} data extracted.`);
-        }
-      } catch (error) {
-        console.error("Exception during AI analysis:", error);
-        toast.error("Screenshot uploaded but AI analysis failed. Admin will verify manually.");
+      if (tournament && currentMatchNum > tournament.total_matches) {
+        toast.error(`Match ${currentMatchNum} exceeds tournament limit of ${tournament.total_matches}`);
+        break;
       }
+
+      // Check if match already exists
+      const { data: existing } = await supabase
+        .from("match_screenshots")
+        .select("id")
+        .eq("team_id", userTeam.id)
+        .eq("match_number", currentMatchNum)
+        .maybeSingle();
+
+      if (existing) {
+        toast.error(`Match ${currentMatchNum} already uploaded, skipping...`);
+        currentMatchNum++;
+        continue;
+      }
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userTeam.id}/${currentMatchNum}-${Date.now()}-${i}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("screenshots")
+        .upload(fileName, file);
+
+      if (uploadError) {
+        toast.error(`Failed to upload screenshot ${i + 1}`);
+        uploadResults.push({ success: false, matchNum: currentMatchNum });
+        currentMatchNum++;
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("screenshots")
+        .getPublicUrl(fileName);
+
+      setUploadProgress(`Saving match ${currentMatchNum} data...`);
+
+      const { error: insertError } = await supabase.from("match_screenshots").insert({
+        team_id: userTeam.id,
+        match_number: currentMatchNum,
+        screenshot_url: urlData.publicUrl,
+      });
+
+      if (insertError) {
+        toast.error(`Failed to save match ${currentMatchNum} screenshot`);
+        uploadResults.push({ success: false, matchNum: currentMatchNum });
+        currentMatchNum++;
+        continue;
+      }
+
+      // Get the inserted screenshot ID
+      const { data: screenshotData } = await supabase
+        .from("match_screenshots")
+        .select("id")
+        .eq("team_id", userTeam.id)
+        .eq("match_number", currentMatchNum)
+        .single();
+
+      if (screenshotData) {
+        setUploadProgress(`Analyzing match ${currentMatchNum} with AI...`);
+
+        // Call AI analysis function
+        try {
+          const { data: analysisData, error: analysisError } = await supabase.functions.invoke("analyze-screenshot", {
+            body: {
+              screenshot_url: urlData.publicUrl,
+              screenshot_id: screenshotData.id,
+              team_id: userTeam.id
+            }
+          });
+
+          if (analysisError) {
+            console.error(`AI analysis error for match ${currentMatchNum}:`, analysisError);
+            uploadResults.push({ success: false, matchNum: currentMatchNum });
+          } else {
+            console.log(`AI analysis success for match ${currentMatchNum}:`, analysisData);
+            uploadResults.push({ success: true, matchNum: currentMatchNum });
+          }
+        } catch (error) {
+          console.error(`Exception during AI analysis for match ${currentMatchNum}:`, error);
+          uploadResults.push({ success: false, matchNum: currentMatchNum });
+        }
+      }
+
+      currentMatchNum++;
     }
 
-    setMatchNumber(matchNumber + 1);
+    // Show summary
+    const successCount = uploadResults.filter(r => r.success).length;
+    const failCount = uploadResults.filter(r => !r.success).length;
+    
+    if (successCount > 0) {
+      toast.success(`Successfully analyzed ${successCount} match(es)`);
+    }
+    if (failCount > 0) {
+      toast.error(`${failCount} match(es) failed analysis - admin will verify manually`);
+    }
+
+    setMatchNumber(currentMatchNum);
     fetchUserTeam();
 
     setUploading(false);
     setUploadProgress("");
+    setUploadStats({ current: 0, total: 0 });
     event.target.value = "";
   };
 
@@ -363,23 +390,31 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="screenshot">Screenshot</Label>
+                  <Label htmlFor="screenshot">Screenshots (up to 4)</Label>
                   <Input
                     id="screenshot"
                     type="file"
                     accept="image/*"
+                    multiple
                     onChange={handleFileUpload}
                     disabled={uploading}
                   />
                 </div>
                 {uploading && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {uploadProgress}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {uploadProgress}
+                    </div>
+                    {uploadStats.total > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        Processing {uploadStats.current} of {uploadStats.total}
+                      </div>
+                    )}
                   </div>
                 )}
                 <p className="text-sm text-muted-foreground">
-                  Upload a screenshot of your match results. Admin will verify and update the points.
+                  Upload up to 4 match screenshots at once. They will be automatically analyzed by AI starting from Match {matchNumber}.
                 </p>
               </div>
             )}
