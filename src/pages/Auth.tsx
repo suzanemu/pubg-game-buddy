@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Trophy } from "lucide-react";
+import { Trophy, Target, Shield } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -113,43 +113,97 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-card to-background p-4">
-      <Card className="w-full max-w-md p-8 space-y-6 bg-card/90 backdrop-blur-sm border-border/50">
-        <div className="text-center space-y-2">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-primary/10 rounded-full">
-              <Trophy className="h-12 w-12 text-primary" />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
+      {/* Tactical Grid Background */}
+      <div className="absolute inset-0 tactical-grid opacity-20"></div>
+      
+      {/* Animated Gradient Overlays */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+
+      <div className="relative z-10 w-full max-w-md px-4">
+        {/* Main Card */}
+        <Card className="card-tactical p-8 space-y-8 backdrop-blur-sm border-2 border-border/50 hover-lift">
+          {/* Header Section */}
+          <div className="text-center space-y-4">
+            <div className="flex justify-center items-center gap-4 mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-primary rounded-full blur-xl opacity-50 animate-pulse"></div>
+                <div className="relative p-4 bg-gradient-primary rounded-full">
+                  <Trophy className="h-12 w-12 text-background" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h1 className="text-5xl font-rajdhani font-bold">
+                <span className="bg-gradient-primary bg-clip-text text-transparent">
+                  PUBG
+                </span>
+              </h1>
+              <h2 className="text-2xl font-rajdhani font-semibold text-foreground/90">
+                Tournament Manager
+              </h2>
+              <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+                <Shield className="h-4 w-4" />
+                <span>Secure Access Portal</span>
+              </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            PUBG Tournament
-          </h1>
-          <p className="text-muted-foreground">Enter your access code to continue</p>
-        </div>
 
-        <form onSubmit={handleAccessCode} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="accessCode">Access Code</Label>
-            <Input
-              id="accessCode"
-              type="text"
-              placeholder="Enter your code"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-              className="text-center text-lg tracking-wider"
+          {/* Form Section */}
+          <form onSubmit={handleAccessCode} className="space-y-6">
+            <div className="space-y-3">
+              <Label 
+                htmlFor="accessCode" 
+                className="text-sm font-rajdhani font-semibold uppercase tracking-wider flex items-center gap-2"
+              >
+                <Target className="h-4 w-4 text-primary" />
+                Access Code
+              </Label>
+              <Input
+                id="accessCode"
+                type="text"
+                placeholder="ENTER-CODE-HERE"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                className="text-center text-2xl font-rajdhani font-bold tracking-widest uppercase bg-secondary/50 border-2 border-border focus:border-primary transition-all h-14"
+                disabled={loading}
+                maxLength={20}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-12 text-lg font-rajdhani font-bold uppercase tracking-wider btn-glow bg-gradient-primary hover:opacity-90 transition-all"
               disabled={loading}
-            />
-          </div>
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 border-3 border-background/30 border-t-background rounded-full animate-spin"></div>
+                  Authenticating...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Enter Tournament
+                </div>
+              )}
+            </Button>
+          </form>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={loading}
-          >
-            {loading ? "Logging in..." : "Enter Tournament"}
-          </Button>
-        </form>
-      </Card>
+          {/* Footer Info */}
+          <div className="pt-4 border-t border-border/30">
+            <p className="text-xs text-center text-muted-foreground font-barlow">
+              Authorized personnel only • Secure connection established
+            </p>
+          </div>
+        </Card>
+
+        {/* Bottom Accent Line */}
+        <div className="mt-6 h-1 bg-gradient-primary rounded-full opacity-50"></div>
+      </div>
     </div>
   );
 };
