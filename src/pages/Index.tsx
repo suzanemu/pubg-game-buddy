@@ -29,10 +29,19 @@ const Index = () => {
       .from("sessions")
       .select("role")
       .eq("user_id", session.user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching session:", error);
+      await supabase.auth.signOut();
+      navigate("/auth");
+      return;
+    }
+
+    if (!sessionData) {
+      // User is authenticated but has no session record - sign them out
+      console.error("No session record found for user");
+      await supabase.auth.signOut();
       navigate("/auth");
       return;
     }
