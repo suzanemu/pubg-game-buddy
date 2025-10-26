@@ -103,17 +103,17 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+    <div className="min-h-screen bg-background tactical-grid">
+      <header className="border-b-2 border-primary/30 bg-gradient-tactical backdrop-blur-sm sticky top-0 z-50 shadow-glow-orange">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Admin Dashboard
+            <h1 className="text-3xl font-rajdhani font-black text-foreground uppercase tracking-wider">
+              <span className="bg-gradient-primary bg-clip-text text-transparent">Admin Dashboard</span>
             </h1>
             {selectedTournament && (
               <div className="mt-2">
                 <Select value={selectedTournament} onValueChange={setSelectedTournament}>
-                  <SelectTrigger className="w-[250px]">
+                  <SelectTrigger className="w-[250px] border-primary/30">
                     <SelectValue placeholder="Select Tournament" />
                   </SelectTrigger>
                   <SelectContent>
@@ -128,7 +128,7 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/")}>
+            <Button variant="outline" onClick={() => navigate("/")} className="btn-glow">
               <Home className="mr-2 h-4 w-4" />
               Home
             </Button>
@@ -142,11 +142,11 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="standings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="standings">Standings</TabsTrigger>
-            <TabsTrigger value="verify">Verify Screenshots</TabsTrigger>
-            <TabsTrigger value="teams">Manage Teams</TabsTrigger>
-            <TabsTrigger value="tournaments">Manage Tournaments</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-secondary/50 border-2 border-primary/20">
+            <TabsTrigger value="standings" className="font-rajdhani font-bold uppercase">Standings</TabsTrigger>
+            <TabsTrigger value="verify" className="font-rajdhani font-bold uppercase">Verify Screenshots</TabsTrigger>
+            <TabsTrigger value="teams" className="font-rajdhani font-bold uppercase">Manage Teams</TabsTrigger>
+            <TabsTrigger value="tournaments" className="font-rajdhani font-bold uppercase">Manage Tournaments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="standings" className="space-y-4">

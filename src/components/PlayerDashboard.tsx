@@ -310,19 +310,19 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+    <div className="min-h-screen bg-background tactical-grid">
+      <header className="border-b-2 border-primary/30 bg-gradient-tactical backdrop-blur-sm sticky top-0 z-50 shadow-glow-orange">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {userTeam.name}
+            <h1 className="text-3xl font-rajdhani font-black text-foreground uppercase tracking-wider">
+              <span className="bg-gradient-primary bg-clip-text text-transparent">{userTeam.name}</span>
             </h1>
             {tournament && (
-              <p className="text-sm text-muted-foreground">{tournament.name}</p>
+              <p className="text-sm text-muted-foreground font-barlow">{tournament.name}</p>
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/")}>
+            <Button variant="outline" onClick={() => navigate("/")} className="btn-glow">
               <Home className="mr-2 h-4 w-4" />
               Home
             </Button>
@@ -336,41 +336,41 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="p-6 bg-gradient-to-br from-card to-card/50">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <div className="card-tactical p-6 border-2 border-primary/20 hover-lift">
+            <h2 className="text-xl font-rajdhani font-bold uppercase tracking-wide mb-4 flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
               Team Stats
             </h2>
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Points</span>
-                <span className="font-bold text-lg text-primary">{userTeam.totalPoints}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-barlow">Total Points</span>
+                <span className="stat-counter text-2xl">{userTeam.totalPoints}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Placement Points</span>
-                <span className="font-semibold">{userTeam.placementPoints}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-3">
+                <span className="text-muted-foreground font-barlow">Placement Points</span>
+                <span className="font-rajdhani font-bold text-lg text-foreground">{userTeam.placementPoints}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Kill Points</span>
-                <span className="font-semibold">{userTeam.killPoints}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-3">
+                <span className="text-muted-foreground font-barlow">Kill Points</span>
+                <span className="font-rajdhani font-bold text-lg text-foreground">{userTeam.killPoints}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Kills</span>
-                <span className="font-semibold">{userTeam.totalKills}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-3">
+                <span className="text-muted-foreground font-barlow">Total Kills</span>
+                <span className="kill-feed text-lg">{userTeam.totalKills}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Matches Played</span>
-                <span className="font-semibold">{userTeam.matchesPlayed}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-3">
+                <span className="text-muted-foreground font-barlow">Matches Played</span>
+                <span className="font-rajdhani font-bold text-lg text-foreground">{userTeam.matchesPlayed}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Chicken Dinners</span>
-                <span className="font-semibold">{userTeam.firstPlaceWins}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-3">
+                <span className="text-muted-foreground font-barlow">Chicken Dinners</span>
+                <span className="font-rajdhani font-bold text-lg text-accent">{userTeam.firstPlaceWins}</span>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <div className="card-tactical p-6 border-2 border-primary/20">
+            <h2 className="text-xl font-rajdhani font-bold uppercase tracking-wide mb-4 flex items-center gap-2">
               <Upload className="h-5 w-5 text-accent" />
               Upload Screenshot
             </h2>
@@ -424,11 +424,10 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
                 </p>
               </div>
             )}
-          </Card>
+          </div>
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold mb-6">Tournament Standings</h2>
           <Standings teams={teams} />
         </div>
       </main>

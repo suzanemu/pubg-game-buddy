@@ -112,70 +112,73 @@ const TournamentManager = ({ onTournamentSelect }: TournamentManagerProps) => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            Create Tournament
-          </CardTitle>
-          <CardDescription>Set up a new PUBG tournament</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="card-tactical border-2 border-primary/20">
+        <div className="bg-gradient-tactical p-6 border-b-2 border-primary/20">
+          <h2 className="flex items-center gap-2 font-rajdhani font-black text-2xl uppercase tracking-wider">
+            <Trophy className="h-6 w-6 text-primary" />
+            <span className="bg-gradient-primary bg-clip-text text-transparent">Create Tournament</span>
+          </h2>
+          <p className="text-muted-foreground font-barlow mt-1">Set up a new PUBG tournament</p>
+        </div>
+        <div className="p-6">
           <form onSubmit={handleCreateTournament} className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Tournament Name</label>
+              <label className="text-sm font-rajdhani font-bold uppercase tracking-wide">Tournament Name</label>
               <Input
                 value={newTournament.name}
                 onChange={(e) => setNewTournament({ ...newTournament, name: e.target.value })}
                 placeholder="Enter tournament name"
                 disabled={loading}
+                className="border-primary/30"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Description (Optional)</label>
+              <label className="text-sm font-rajdhani font-bold uppercase tracking-wide">Description (Optional)</label>
               <Textarea
                 value={newTournament.description}
                 onChange={(e) => setNewTournament({ ...newTournament, description: e.target.value })}
                 placeholder="Enter tournament description"
                 disabled={loading}
+                className="border-primary/30"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Total Matches</label>
+              <label className="text-sm font-rajdhani font-bold uppercase tracking-wide">Total Matches</label>
               <Input
                 type="number"
                 min="1"
                 value={newTournament.total_matches}
                 onChange={(e) => setNewTournament({ ...newTournament, total_matches: parseInt(e.target.value) || 6 })}
                 disabled={loading}
+                className="border-primary/30"
               />
             </div>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="btn-glow">
               {loading ? "Creating..." : "Create Tournament"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Existing Tournaments</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="card-tactical border-2 border-primary/20">
+        <div className="bg-gradient-tactical p-6 border-b-2 border-primary/20">
+          <h2 className="font-rajdhani font-black text-2xl uppercase tracking-wider">Existing Tournaments</h2>
+        </div>
+        <div className="p-6">
           <div className="space-y-2">
             {tournaments.map((tournament) => (
               <div
                 key={tournament.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/5 transition-colors"
+                className="flex items-center justify-between p-4 border-2 border-border/30 rounded-lg hover:border-primary/30 transition-colors bg-secondary/20"
               >
                 <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  <Calendar className="h-5 w-5 text-primary" />
                   <div>
-                    <h3 className="font-semibold">{tournament.name}</h3>
+                    <h3 className="font-rajdhani font-bold text-lg text-foreground">{tournament.name}</h3>
                     {tournament.description && (
-                      <p className="text-sm text-muted-foreground">{tournament.description}</p>
+                      <p className="text-sm text-muted-foreground font-barlow">{tournament.description}</p>
                     )}
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground font-barlow mt-1">
                       {tournament.total_matches} matches
                     </p>
                   </div>
@@ -190,11 +193,11 @@ const TournamentManager = ({ onTournamentSelect }: TournamentManagerProps) => {
               </div>
             ))}
             {tournaments.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No tournaments yet</p>
+              <p className="text-center text-muted-foreground py-8 font-barlow">No tournaments yet</p>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

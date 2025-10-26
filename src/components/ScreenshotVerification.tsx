@@ -199,17 +199,18 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {screenshots.map((screenshot) => (
-          <Card key={screenshot.id} className="p-4 space-y-3">
+          <div key={screenshot.id} className="card-tactical p-4 space-y-3 border-2 border-primary/20 hover-lift">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="font-semibold">{screenshot.team_name}</h3>
-                <p className="text-sm text-muted-foreground">Match {screenshot.match_number}</p>
+                <h3 className="font-rajdhani font-bold text-lg text-foreground">{screenshot.team_name}</h3>
+                <p className="text-sm text-muted-foreground font-barlow">Match {screenshot.match_number}</p>
               </div>
               <div className="flex gap-2">
                 <Button
                   size="icon"
                   variant="outline"
                   onClick={() => handleViewImage(screenshot)}
+                  className="hover:border-primary/50"
                 >
                   <ImageIcon className="h-4 w-4" />
                 </Button>
@@ -217,31 +218,32 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
                   size="icon"
                   variant="outline"
                   onClick={() => handleEditClick(screenshot)}
+                  className="btn-glow"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-1 text-sm">
-              <p>
-                <span className="text-muted-foreground">Placement:</span>{" "}
-                {screenshot.placement || "Not set"}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Kills:</span>{" "}
-                {screenshot.kills || 0}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Points:</span>{" "}
-                {screenshot.points || 0}
-              </p>
+            <div className="space-y-2 text-sm border-t border-border/30 pt-3">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-barlow">Placement:</span>
+                <span className="font-rajdhani font-bold text-foreground">{screenshot.placement || "Not set"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-barlow">Kills:</span>
+                <span className="kill-feed">{screenshot.kills || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-barlow">Points:</span>
+                <span className="stat-counter">{screenshot.points || 0}</span>
+              </div>
             </div>
-          </Card>
+          </div>
         ))}
 
         {screenshots.length === 0 && (
-          <p className="col-span-full text-center text-muted-foreground py-12">
+          <p className="col-span-full text-center text-muted-foreground py-12 font-barlow">
             No screenshots uploaded yet
           </p>
         )}

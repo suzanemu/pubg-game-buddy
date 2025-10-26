@@ -157,11 +157,11 @@ export default function TeamManager() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6">
+      <div className="card-tactical p-6 border-2 border-primary/20">
         <div className="mb-4">
-          <Label>Select Tournament</Label>
+          <Label className="font-rajdhani font-bold uppercase text-sm">Select Tournament</Label>
           <Select value={selectedTournament} onValueChange={setSelectedTournament}>
-            <SelectTrigger>
+            <SelectTrigger className="border-primary/30">
               <SelectValue placeholder="Select a tournament" />
             </SelectTrigger>
             <SelectContent>
@@ -176,7 +176,7 @@ export default function TeamManager() {
 
         <form onSubmit={handleCreateTeam} className="space-y-4">
           <div>
-            <Label htmlFor="teamName">Team Name</Label>
+            <Label htmlFor="teamName" className="font-rajdhani font-bold uppercase text-sm">Team Name</Label>
             <div className="flex gap-2">
               <Input
                 id="teamName"
@@ -184,25 +184,26 @@ export default function TeamManager() {
                 onChange={(e) => setNewTeamName(e.target.value)}
                 placeholder="Enter team name"
                 disabled={loading || !selectedTournament}
+                className="border-primary/30"
               />
-              <Button type="submit" disabled={loading || !selectedTournament}>
+              <Button type="submit" disabled={loading || !selectedTournament} className="btn-glow">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Team
               </Button>
             </div>
           </div>
         </form>
-      </Card>
+      </div>
 
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">Teams</h3>
+      <div className="card-tactical p-6 border-2 border-primary/20">
+        <h3 className="font-rajdhani font-bold uppercase tracking-wide text-xl mb-4">Teams</h3>
         <div className="space-y-2">
           {teams.map((team) => (
-            <div key={team.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div key={team.id} className="flex items-center justify-between p-4 border-2 border-border/30 rounded-lg hover:border-primary/30 transition-colors bg-secondary/20">
               <div>
-                <p className="font-medium">{team.name}</p>
+                <p className="font-rajdhani font-bold text-lg text-foreground">{team.name}</p>
                 {team.access_code && (
-                  <p className="text-sm text-muted-foreground">Code: {team.access_code}</p>
+                  <p className="text-sm text-muted-foreground font-mono">Code: {team.access_code}</p>
                 )}
               </div>
               <div className="flex gap-2">
@@ -211,6 +212,7 @@ export default function TeamManager() {
                     size="icon"
                     variant="outline"
                     onClick={() => copyToClipboard(team.access_code!)}
+                    className="hover:border-primary/50"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -226,13 +228,13 @@ export default function TeamManager() {
             </div>
           ))}
           {teams.length === 0 && selectedTournament && (
-            <p className="text-center text-muted-foreground py-8">No teams yet</p>
+            <p className="text-center text-muted-foreground py-8 font-barlow">No teams yet</p>
           )}
           {!selectedTournament && (
-            <p className="text-center text-muted-foreground py-8">Please select a tournament</p>
+            <p className="text-center text-muted-foreground py-8 font-barlow">Please select a tournament</p>
           )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
