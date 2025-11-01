@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import TeamManager from "./TeamManager";
 import TournamentManager from "./TournamentManager";
 import ScreenshotVerification from "./ScreenshotVerification";
+import ManualPointsEntry from "./ManualPointsEntry";
 import Standings from "./Standings";
 import { Team, Tournament } from "@/types/tournament";
 
@@ -143,8 +144,9 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="standings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-secondary/50 border-2 border-primary/20">
+          <TabsList className="grid w-full grid-cols-5 bg-secondary/50 border-2 border-primary/20">
             <TabsTrigger value="standings" className="font-rajdhani font-bold uppercase">Standings</TabsTrigger>
+            <TabsTrigger value="manual" className="font-rajdhani font-bold uppercase">Manual Points</TabsTrigger>
             <TabsTrigger value="verify" className="font-rajdhani font-bold uppercase">Verify Screenshots</TabsTrigger>
             <TabsTrigger value="teams" className="font-rajdhani font-bold uppercase">Manage Teams</TabsTrigger>
             <TabsTrigger value="tournaments" className="font-rajdhani font-bold uppercase">Manage Tournaments</TabsTrigger>
@@ -152,6 +154,10 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
 
           <TabsContent value="standings" className="space-y-4">
             <Standings teams={teams} isAdmin={true} onTeamsUpdate={fetchTeams} />
+          </TabsContent>
+
+          <TabsContent value="manual" className="space-y-4">
+            <ManualPointsEntry selectedTournament={selectedTournament} />
           </TabsContent>
 
           <TabsContent value="verify" className="space-y-4">
