@@ -10,7 +10,7 @@ import { Upload, LogOut, Loader2, Trophy, AlertCircle, Home, Eye, Trash2, Image 
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Standings from "./Standings";
-import { Team, Tournament } from "@/types/tournament";
+import { Team, Tournament, PLACEMENT_POINTS, KILL_POINTS } from "@/types/tournament";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface PlayerDashboardProps {
@@ -320,6 +320,18 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
     setDeleting(screenshotId);
 
     try {
+      // Get screenshot data before deleting to update team stats
+      const { data: screenshotData, error: fetchError } = await supabase
+        .from("match_screenshots")
+        .select("points, kills, placement, team_id")
+        .eq("id", screenshotId)
+        .single();
+
+      if (fetchError) {
+        toast.error("Failed to fetch screenshot data");
+        return;
+      }
+
       // Extract file path from URL
       const url = new URL(screenshotUrl);
       const pathParts = url.pathname.split('/');
@@ -344,6 +356,32 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
       if (dbError) {
         toast.error("Failed to delete screenshot record");
         return;
+      }
+
+      // Update team stats if screenshot had valid data
+      if (screenshotData.points !== null && screenshotData.kills !== null && screenshotData.placement !== null) {
+        const { data: teamData } = await supabase
+          .from("teams")
+          .select("total_points, kill_points, placement_points, total_kills, matches_played, first_place_wins")
+          .eq("id", screenshotData.team_id)
+          .single();
+
+        if (teamData) {
+          const placementPoints = PLACEMENT_POINTS[screenshotData.placement] || 0;
+          const killPoints = screenshotData.kills * KILL_POINTS;
+          
+          await supabase
+            .from("teams")
+            .update({
+              total_points: Math.max(0, teamData.total_points - screenshotData.points),
+              placement_points: Math.max(0, teamData.placement_points - placementPoints),
+              kill_points: Math.max(0, teamData.kill_points - killPoints),
+              total_kills: Math.max(0, teamData.total_kills - screenshotData.kills),
+              matches_played: Math.max(0, teamData.matches_played - 1),
+              first_place_wins: screenshotData.placement === 1 ? Math.max(0, teamData.first_place_wins - 1) : teamData.first_place_wins,
+            })
+            .eq("id", screenshotData.team_id);
+        }
       }
 
       toast.success("Screenshot deleted successfully");
