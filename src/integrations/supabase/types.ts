@@ -51,7 +51,7 @@ export type Database = {
           created_at: string | null
           id: string
           kills: number | null
-          match_number: number
+          match_number: number | null
           placement: number | null
           points: number | null
           screenshot_url: string
@@ -61,7 +61,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           kills?: number | null
-          match_number: number
+          match_number?: number | null
           placement?: number | null
           points?: number | null
           screenshot_url: string
@@ -71,7 +71,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           kills?: number | null
-          match_number?: number
+          match_number?: number | null
           placement?: number | null
           points?: number | null
           screenshot_url?: string
