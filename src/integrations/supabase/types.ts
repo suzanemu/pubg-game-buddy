@@ -228,12 +228,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_placement_points: {
+        Args: { placement: number }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      recalculate_team_stats: {
+        Args: { p_team_id: string }
+        Returns: undefined
       }
       validate_access_code: {
         Args: { _code: string }
