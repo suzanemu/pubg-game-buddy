@@ -26,7 +26,17 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { Edit, Loader2, Image as ImageIcon, Plus } from "lucide-react";
+import { Edit, Loader2, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { calculatePoints } from "@/types/tournament";
 
 interface Team {
@@ -66,6 +76,9 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
   const [manualKills, setManualKills] = useState<number>(0);
   const [updating, setUpdating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [screenshotToDelete, setScreenshotToDelete] = useState<MatchScreenshot | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (selectedTournament) {
@@ -305,6 +318,35 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
     setSaving(false);
   };
 
+  const handleDeleteClick = (screenshot: MatchScreenshot) => {
+    setScreenshotToDelete(screenshot);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteScreenshot = async () => {
+    if (!screenshotToDelete) return;
+
+    setDeleting(true);
+
+    const { error } = await supabase
+      .from("match_screenshots")
+      .delete()
+      .eq("id", screenshotToDelete.id);
+
+    if (error) {
+      toast.error("Failed to delete screenshot");
+      console.error("Delete error:", error);
+      setDeleting(false);
+      return;
+    }
+
+    toast.success("Screenshot deleted successfully!");
+    setDeleteDialogOpen(false);
+    setScreenshotToDelete(null);
+    setDeleting(false);
+    fetchScreenshots();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -378,6 +420,14 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
                               className="btn-glow"
                             >
                               <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => handleDeleteClick(screenshot)}
+                              className="hover:border-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -555,6 +605,27 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Screenshot</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this screenshot? This will also update the team's points accordingly. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteScreenshot} 
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
