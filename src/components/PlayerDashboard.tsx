@@ -6,11 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, LogOut, Loader2, Trophy, AlertCircle, Home } from "lucide-react";
+import { Upload, LogOut, Loader2, Trophy, AlertCircle, Home, Eye, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Standings from "./Standings";
 import { Team, Tournament } from "@/types/tournament";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface PlayerDashboardProps {
   userId: string;
@@ -25,9 +26,13 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [uploadedScreenshots, setUploadedScreenshots] = useState<number>(0);
   const [uploadStats, setUploadStats] = useState({ current: 0, total: 0 });
+  const [screenshots, setScreenshots] = useState<Array<{ id: string; screenshot_url: string; match_number: number | null; placement: number | null; kills: number | null; created_at: string }>>([]);
+  const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUserTeam();
+    fetchScreenshots();
   }, [userId]);
 
   useEffect(() => {
@@ -104,6 +109,29 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
       .eq("team_id", sessionData.team_id);
 
     setUploadedScreenshots(screenshotsData?.length || 0);
+    fetchScreenshots();
+  };
+
+  const fetchScreenshots = async () => {
+    if (!userId) return;
+
+    const { data: sessionData } = await supabase
+      .from("sessions")
+      .select("team_id")
+      .eq("user_id", userId)
+      .single();
+
+    if (!sessionData?.team_id) return;
+
+    const { data, error } = await supabase
+      .from("match_screenshots")
+      .select("id, screenshot_url, match_number, placement, kills, created_at")
+      .eq("team_id", sessionData.team_id)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setScreenshots(data);
+    }
   };
 
   const fetchTournament = async () => {
@@ -276,11 +304,57 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
     }
 
     fetchUserTeam();
+    fetchScreenshots();
 
     setUploading(false);
     setUploadProgress("");
     setUploadStats({ current: 0, total: 0 });
     event.target.value = "";
+  };
+
+  const handleDeleteScreenshot = async (screenshotId: string, screenshotUrl: string) => {
+    if (!confirm("Are you sure you want to delete this screenshot? This action cannot be undone.")) {
+      return;
+    }
+
+    setDeleting(screenshotId);
+
+    try {
+      // Extract file path from URL
+      const url = new URL(screenshotUrl);
+      const pathParts = url.pathname.split('/');
+      const filePath = pathParts.slice(pathParts.indexOf('screenshots') + 1).join('/');
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from("screenshots")
+        .remove([filePath]);
+
+      if (storageError) {
+        toast.error("Failed to delete screenshot file");
+        return;
+      }
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from("match_screenshots")
+        .delete()
+        .eq("id", screenshotId);
+
+      if (dbError) {
+        toast.error("Failed to delete screenshot record");
+        return;
+      }
+
+      toast.success("Screenshot deleted successfully");
+      fetchUserTeam();
+      fetchScreenshots();
+    } catch (error) {
+      console.error("Error deleting screenshot:", error);
+      toast.error("An error occurred while deleting the screenshot");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const handleLogout = async () => {
@@ -420,10 +494,80 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
           </div>
         </div>
 
+        {screenshots.length > 0 && (
+          <div className="card-tactical p-6 border-2 border-primary/20">
+            <h2 className="text-xl font-rajdhani font-bold uppercase tracking-wide mb-4 flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-accent" />
+              Uploaded Screenshots ({screenshots.length})
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {screenshots.map((screenshot) => (
+                <div key={screenshot.id} className="relative group border border-border/30 rounded-lg overflow-hidden hover-lift">
+                  <div className="aspect-video relative bg-muted">
+                    <img
+                      src={screenshot.screenshot_url}
+                      alt="Match screenshot"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setSelectedScreenshot(screenshot.screenshot_url)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteScreenshot(screenshot.id, screenshot.screenshot_url)}
+                        disabled={deleting === screenshot.id}
+                      >
+                        {deleting === screenshot.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-2 bg-card space-y-1">
+                    <div className="text-xs text-muted-foreground font-barlow">
+                      {screenshot.match_number ? `Match #${screenshot.match_number}` : 'Pending Analysis'}
+                    </div>
+                    {screenshot.placement && screenshot.kills !== null && (
+                      <div className="text-xs font-rajdhani">
+                        <span className="text-foreground">Placement: #{screenshot.placement}</span>
+                        <span className="mx-2">•</span>
+                        <span className="text-accent">Kills: {screenshot.kills}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <Standings teams={teams} />
         </div>
       </main>
+
+      <Dialog open={!!selectedScreenshot} onOpenChange={() => setSelectedScreenshot(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Screenshot Preview</DialogTitle>
+          </DialogHeader>
+          {selectedScreenshot && (
+            <img
+              src={selectedScreenshot}
+              alt="Screenshot preview"
+              className="w-full h-auto rounded-lg"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
