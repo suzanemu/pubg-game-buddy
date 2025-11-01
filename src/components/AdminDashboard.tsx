@@ -151,7 +151,7 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
           </TabsList>
 
           <TabsContent value="standings" className="space-y-4">
-            <Standings teams={teams} />
+            <Standings teams={teams} isAdmin={true} onTeamsUpdate={fetchTeams} />
           </TabsContent>
 
           <TabsContent value="verify" className="space-y-4">

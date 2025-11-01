@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Trophy, Calendar } from "lucide-react";
+import { Trash2, Trophy, Calendar, Pencil, X, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tournament } from "@/types/tournament";
 
@@ -21,6 +21,8 @@ const TournamentManager = ({ onTournamentSelect }: TournamentManagerProps) => {
     total_matches: 6,
   });
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   useEffect(() => {
     fetchTournaments();
@@ -110,6 +112,48 @@ const TournamentManager = ({ onTournamentSelect }: TournamentManagerProps) => {
     }
   };
 
+  const handleStartEdit = (tournament: Tournament) => {
+    setEditingId(tournament.id);
+    setEditName(tournament.name);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditName("");
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    if (!editName.trim()) {
+      toast({
+        title: "Error",
+        description: "Tournament name cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from("tournaments")
+      .update({ name: editName })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update tournament name",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Tournament name updated successfully!",
+      });
+      fetchTournaments();
+      setEditingId(null);
+      setEditName("");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="card-tactical border-2 border-primary/20">
@@ -171,10 +215,19 @@ const TournamentManager = ({ onTournamentSelect }: TournamentManagerProps) => {
                 key={tournament.id}
                 className="flex items-center justify-between p-4 border-2 border-border/30 rounded-lg hover:border-primary/30 transition-colors bg-secondary/20"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
                   <Calendar className="h-5 w-5 text-primary" />
-                  <div>
-                    <h3 className="font-rajdhani font-bold text-lg text-foreground">{tournament.name}</h3>
+                  <div className="flex-1">
+                    {editingId === tournament.id ? (
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="font-rajdhani font-bold text-lg border-primary/30"
+                        autoFocus
+                      />
+                    ) : (
+                      <h3 className="font-rajdhani font-bold text-lg text-foreground">{tournament.name}</h3>
+                    )}
                     {tournament.description && (
                       <p className="text-sm text-muted-foreground font-barlow">{tournament.description}</p>
                     )}
@@ -183,13 +236,45 @@ const TournamentManager = ({ onTournamentSelect }: TournamentManagerProps) => {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDeleteTournament(tournament.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {editingId === tournament.id ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleSaveEdit(tournament.id)}
+                        className="border-primary/30"
+                      >
+                        <Check className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCancelEdit}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleStartEdit(tournament)}
+                        className="border-primary/30"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => handleDeleteTournament(tournament.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
             {tournaments.length === 0 && (

@@ -1,4 +1,4 @@
-import { Trophy, Award, Crown, Target, Crosshair } from "lucide-react";
+import { Trophy, Award, Crown, Target, Crosshair, RotateCcw } from "lucide-react";
 import { Team } from "@/types/tournament";
 import {
   Table,
@@ -8,18 +8,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface StandingsProps {
   teams: Team[];
+  isAdmin?: boolean;
+  onTeamsUpdate?: () => void;
 }
 
-const Standings = ({ teams }: StandingsProps) => {
+const Standings = ({ teams, isAdmin = false, onTeamsUpdate }: StandingsProps) => {
+  const { toast } = useToast();
+  
   const sortedTeams = [...teams].sort((a, b) => {
     if (b.totalPoints !== a.totalPoints) {
       return b.totalPoints - a.totalPoints;
     }
     return b.totalKills - a.totalKills;
   });
+
+  const handleResetTeam = async (teamId: string, teamName: string) => {
+    if (!confirm(`Are you sure you want to reset all points for ${teamName}?`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("teams")
+      .update({
+        total_points: 0,
+        placement_points: 0,
+        kill_points: 0,
+        total_kills: 0,
+        matches_played: 0,
+        first_place_wins: 0,
+      })
+      .eq("id", teamId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reset team points",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: `${teamName} points have been reset`,
+      });
+      onTeamsUpdate?.();
+    }
+  };
 
   const top3 = sortedTeams.slice(0, 3);
   const remaining = sortedTeams.slice(3);
@@ -195,6 +234,11 @@ const Standings = ({ teams }: StandingsProps) => {
                 <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
                   Total
                 </TableHead>
+                {isAdmin && (
+                  <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
+                    Actions
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -244,6 +288,18 @@ const Standings = ({ teams }: StandingsProps) => {
                       {team.totalPoints}
                     </span>
                   </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-center">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleResetTeam(team.id, team.name)}
+                        className="border-destructive/50 hover:bg-destructive/10"
+                      >
+                        <RotateCcw className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
