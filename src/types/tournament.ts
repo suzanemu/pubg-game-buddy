@@ -8,6 +8,7 @@ export interface Team {
   matchesPlayed: number;
   firstPlaceWins: number;
   tournament_id?: string;
+  logo_url?: string;
 }
 
 export interface Tournament {

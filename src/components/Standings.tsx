@@ -30,7 +30,6 @@ const Standings = ({ teams }: StandingsProps) => {
     const isThird = rank === 3;
     
     const height = isFirst ? "h-96" : isSecond ? "h-80" : "h-72";
-    const iconSize = isFirst ? "w-20 h-20" : isSecond ? "w-16 h-16" : "w-14 h-14";
     const titleSize = isFirst ? "text-3xl" : isSecond ? "text-2xl" : "text-xl";
     
     const getRankClass = () => {
@@ -51,14 +50,22 @@ const Standings = ({ teams }: StandingsProps) => {
           </div>
         </div>
         
-        {/* Team Logo Circle */}
+        {/* Team Logo */}
         <div className={`${isFirst ? 'w-36 h-36 mb-6' : isSecond ? 'w-28 h-28 mb-5' : 'w-24 h-24 mb-4'} relative rounded-full flex items-center justify-center`}>
           <div className="absolute inset-0 bg-gradient-primary rounded-full animate-pulse opacity-50 blur-lg"></div>
-          <div className="relative w-full h-full bg-gradient-primary rounded-full flex items-center justify-center border-4 border-background shadow-glow-orange">
-            {isFirst ? (
-              <Crown className={`${iconSize} text-background drop-shadow-lg`} />
+          <div className="relative w-full h-full bg-gradient-primary rounded-full flex items-center justify-center border-4 border-background shadow-glow-orange overflow-hidden">
+            {team.logo_url ? (
+              <img 
+                src={team.logo_url} 
+                alt={`${team.name} logo`}
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <Trophy className={`${iconSize} text-background drop-shadow-lg`} />
+              isFirst ? (
+                <Crown className={`${isFirst ? 'w-20 h-20' : isSecond ? 'w-16 h-16' : 'w-14 h-14'} text-background drop-shadow-lg`} />
+              ) : (
+                <Trophy className={`${isFirst ? 'w-20 h-20' : isSecond ? 'w-16 h-16' : 'w-14 h-14'} text-background drop-shadow-lg`} />
+              )
             )}
           </div>
         </div>
@@ -201,9 +208,17 @@ const Standings = ({ teams }: StandingsProps) => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-lg bg-gradient-primary/20 flex items-center justify-center border border-primary/30 group-hover:border-primary/50 transition-colors">
-                        <Trophy className="w-5 h-5 text-primary" />
-                      </div>
+                      {team.logo_url ? (
+                        <img 
+                          src={team.logo_url} 
+                          alt={`${team.name} logo`}
+                          className="w-10 h-10 rounded-lg object-cover border border-primary/30 group-hover:border-primary/50 transition-colors"
+                        />
+                      ) : (
+                        <div className="relative w-10 h-10 rounded-lg bg-gradient-primary/20 flex items-center justify-center border border-primary/30 group-hover:border-primary/50 transition-colors">
+                          <Trophy className="w-5 h-5 text-primary" />
+                        </div>
+                      )}
                       <span className="font-rajdhani font-bold text-lg text-foreground">
                         {team.name}
                       </span>

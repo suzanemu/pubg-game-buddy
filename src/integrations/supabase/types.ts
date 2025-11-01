@@ -126,6 +126,7 @@ export type Database = {
           first_place_wins: number | null
           id: string
           kill_points: number | null
+          logo_url: string | null
           matches_played: number | null
           name: string
           placement_points: number | null
@@ -139,6 +140,7 @@ export type Database = {
           first_place_wins?: number | null
           id?: string
           kill_points?: number | null
+          logo_url?: string | null
           matches_played?: number | null
           name: string
           placement_points?: number | null
@@ -152,6 +154,7 @@ export type Database = {
           first_place_wins?: number | null
           id?: string
           kill_points?: number | null
+          logo_url?: string | null
           matches_played?: number | null
           name?: string
           placement_points?: number | null

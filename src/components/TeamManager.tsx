@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { Copy, Plus, Trash2, Upload, Image as ImageIcon } from "lucide-react";
 import { Tournament } from "@/types/tournament";
 
 interface Team {
   id: string;
   name: string;
   access_code?: string;
+  logo_url?: string;
 }
 
 export default function TeamManager() {
@@ -20,6 +21,7 @@ export default function TeamManager() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<string>("");
   const [newTeamName, setNewTeamName] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -101,11 +103,36 @@ export default function TeamManager() {
 
     setLoading(true);
 
+    let logoUrl: string | undefined;
+
+    // Upload logo if provided
+    if (logoFile) {
+      const fileExt = logoFile.name.split(".").pop();
+      const fileName = `${Date.now()}-${newTeamName.replace(/\s+/g, "-")}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("team-logos")
+        .upload(fileName, logoFile);
+
+      if (uploadError) {
+        toast.error("Failed to upload logo");
+        setLoading(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("team-logos")
+        .getPublicUrl(fileName);
+
+      logoUrl = urlData.publicUrl;
+    }
+
     const { data: teamData, error: teamError } = await supabase
       .from("teams")
       .insert({
         name: newTeamName,
         tournament_id: selectedTournament,
+        logo_url: logoUrl,
       })
       .select()
       .single();
@@ -129,6 +156,7 @@ export default function TeamManager() {
     } else {
       toast.success("Team created successfully!");
       setNewTeamName("");
+      setLogoFile(null);
       fetchTeams();
     }
 
@@ -177,21 +205,40 @@ export default function TeamManager() {
         <form onSubmit={handleCreateTeam} className="space-y-4">
           <div>
             <Label htmlFor="teamName" className="font-rajdhani font-bold uppercase text-sm">Team Name</Label>
-            <div className="flex gap-2">
+            <Input
+              id="teamName"
+              value={newTeamName}
+              onChange={(e) => setNewTeamName(e.target.value)}
+              placeholder="Enter team name"
+              disabled={loading || !selectedTournament}
+              className="border-primary/30"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="teamLogo" className="font-rajdhani font-bold uppercase text-sm">Team Logo (Optional)</Label>
+            <div className="flex gap-2 items-center">
               <Input
-                id="teamName"
-                value={newTeamName}
-                onChange={(e) => setNewTeamName(e.target.value)}
-                placeholder="Enter team name"
+                id="teamLogo"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
                 disabled={loading || !selectedTournament}
                 className="border-primary/30"
               />
-              <Button type="submit" disabled={loading || !selectedTournament} className="btn-glow">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Team
-              </Button>
+              {logoFile && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" />
+                  {logoFile.name}
+                </div>
+              )}
             </div>
           </div>
+
+          <Button type="submit" disabled={loading || !selectedTournament} className="btn-glow w-full">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Team
+          </Button>
         </form>
       </div>
 
@@ -200,11 +247,24 @@ export default function TeamManager() {
         <div className="space-y-2">
           {teams.map((team) => (
             <div key={team.id} className="flex items-center justify-between p-4 border-2 border-border/30 rounded-lg hover:border-primary/30 transition-colors bg-secondary/20">
-              <div>
-                <p className="font-rajdhani font-bold text-lg text-foreground">{team.name}</p>
-                {team.access_code && (
-                  <p className="text-sm text-muted-foreground font-mono">Code: {team.access_code}</p>
+              <div className="flex items-center gap-3">
+                {team.logo_url ? (
+                  <img 
+                    src={team.logo_url} 
+                    alt={`${team.name} logo`}
+                    className="w-12 h-12 rounded-lg object-cover border-2 border-primary/30"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-gradient-primary/20 flex items-center justify-center border border-primary/30">
+                    <ImageIcon className="w-6 h-6 text-primary" />
+                  </div>
                 )}
+                <div>
+                  <p className="font-rajdhani font-bold text-lg text-foreground">{team.name}</p>
+                  {team.access_code && (
+                    <p className="text-sm text-muted-foreground font-mono">Code: {team.access_code}</p>
+                  )}
+                </div>
               </div>
               <div className="flex gap-2">
                 {team.access_code && (

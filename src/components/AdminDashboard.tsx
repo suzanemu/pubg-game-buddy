@@ -92,6 +92,7 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
       matchesPlayed: team.matches_played || 0,
       firstPlaceWins: team.first_place_wins || 0,
       tournament_id: team.tournament_id,
+      logo_url: team.logo_url,
     }));
 
     setTeams(mappedTeams);
