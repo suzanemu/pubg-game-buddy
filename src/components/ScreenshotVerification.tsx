@@ -19,6 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { Edit, Loader2, Image as ImageIcon } from "lucide-react";
 import { calculatePoints } from "@/types/tournament";
@@ -195,59 +201,90 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
     );
   }
 
+  // Group screenshots by team
+  const groupedByTeam = screenshots.reduce((acc, screenshot) => {
+    const teamName = screenshot.team_name;
+    if (!acc[teamName]) {
+      acc[teamName] = [];
+    }
+    acc[teamName].push(screenshot);
+    return acc;
+  }, {} as Record<string, MatchScreenshot[]>);
+
+  // Sort team names alphabetically
+  const sortedTeamNames = Object.keys(groupedByTeam).sort((a, b) => a.localeCompare(b));
+
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {screenshots.map((screenshot) => (
-          <div key={screenshot.id} className="card-tactical p-4 space-y-3 border-2 border-primary/20 hover-lift">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-rajdhani font-bold text-lg text-foreground">{screenshot.team_name}</h3>
-                <p className="text-sm text-muted-foreground font-barlow">Match {screenshot.match_number}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => handleViewImage(screenshot)}
-                  className="hover:border-primary/50"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => handleEditClick(screenshot)}
-                  className="btn-glow"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+      {screenshots.length === 0 ? (
+        <p className="text-center text-muted-foreground py-12 font-barlow">
+          No screenshots uploaded yet
+        </p>
+      ) : (
+        <Accordion type="multiple" className="space-y-4">
+          {sortedTeamNames.map((teamName) => {
+            const teamScreenshots = groupedByTeam[teamName];
+            return (
+              <AccordionItem key={teamName} value={teamName} className="border border-primary/20 rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center justify-between w-full pr-4">
+                    <span className="font-rajdhani font-bold text-lg text-foreground">{teamName}</span>
+                    <span className="text-sm text-muted-foreground font-barlow">
+                      {teamScreenshots.length} screenshot{teamScreenshots.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
+                    {teamScreenshots.map((screenshot) => (
+                      <div key={screenshot.id} className="card-tactical p-4 space-y-3 border-2 border-primary/20 hover-lift">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm text-muted-foreground font-barlow">Match {screenshot.match_number}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => handleViewImage(screenshot)}
+                              className="hover:border-primary/50"
+                            >
+                              <ImageIcon className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => handleEditClick(screenshot)}
+                              className="btn-glow"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
 
-            <div className="space-y-2 text-sm border-t border-border/30 pt-3">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-barlow">Placement:</span>
-                <span className="font-rajdhani font-bold text-foreground">{screenshot.placement || "Not set"}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-barlow">Kills:</span>
-                <span className="kill-feed">{screenshot.kills || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-barlow">Points:</span>
-                <span className="stat-counter">{screenshot.points || 0}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {screenshots.length === 0 && (
-          <p className="col-span-full text-center text-muted-foreground py-12 font-barlow">
-            No screenshots uploaded yet
-          </p>
-        )}
-      </div>
+                        <div className="space-y-2 text-sm border-t border-border/30 pt-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground font-barlow">Placement:</span>
+                            <span className="font-rajdhani font-bold text-foreground">{screenshot.placement || "Not set"}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground font-barlow">Kills:</span>
+                            <span className="kill-feed">{screenshot.kills || 0}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground font-barlow">Points:</span>
+                            <span className="stat-counter">{screenshot.points || 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      )}
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
