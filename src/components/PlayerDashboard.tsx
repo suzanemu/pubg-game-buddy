@@ -279,8 +279,26 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
 
   if (!userTeam) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex min-h-screen items-center justify-center bg-background tactical-grid">
+        <Card className="card-tactical p-8 max-w-md mx-4 border-2 border-primary/20">
+          <div className="text-center space-y-4">
+            <AlertCircle className="h-16 w-16 text-accent mx-auto" />
+            <h2 className="text-2xl font-rajdhani font-bold uppercase">No Team Assigned</h2>
+            <p className="text-muted-foreground font-barlow">
+              You haven't been assigned to a team yet. Please contact the tournament admin to assign you to a team.
+            </p>
+            <div className="flex gap-2 justify-center pt-4">
+              <Button variant="outline" onClick={() => navigate("/")} className="btn-glow">
+                <Home className="mr-2 h-4 w-4" />
+                Home
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }
