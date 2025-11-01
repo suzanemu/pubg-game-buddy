@@ -81,7 +81,22 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: "Analyze this PUBG match results screenshot and extract the placement (rank) and kills. The placement should be a number from 1 to 18. Return the data in the specified format."
+                text: `Analyze this PUBG match results screenshot and extract:
+
+1. PLACEMENT (rank): Look for the placement number, usually shown as "#2" or "2nd place" or similar. This is typically displayed prominently at the top of the screen. The placement should be a number from 1 to 18.
+
+2. TOTAL TEAM KILLS: This screenshot may show kills in different ways:
+   - If you see a detailed stats table with an "Eliminations" column, sum up all the eliminations for all team members
+   - If you see player cards at the bottom with individual elimination numbers, sum those up
+   - If you see "Eliminations: X" anywhere, use that total
+   - The kills could be labeled as "Eliminations", "Kills", or shown with a number
+
+Important: 
+- For kills/eliminations, you need to add up ALL team members' kills to get the total
+- Look carefully at the entire screenshot to find where the kill information is displayed
+- The placement is usually shown with a large "#" symbol followed by the rank number
+
+Return the total team placement and total team kills.`
               },
               {
                 type: "image_url",
