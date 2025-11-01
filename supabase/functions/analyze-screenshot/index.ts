@@ -36,9 +36,13 @@ serve(async (req) => {
       );
     }
 
-    const { screenshot_url, screenshot_id, team_id } = await req.json();
+    const body = await req.json();
+    const { screenshot_url, screenshot_id, team_id } = body;
+
+    console.log("Request body:", { screenshot_url, screenshot_id, team_id });
 
     if (!screenshot_url || !screenshot_id || !team_id) {
+      console.error("Missing parameters:", { screenshot_url, screenshot_id, team_id });
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -137,9 +141,15 @@ Return the total team placement and total team kills.`
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errorText);
+      console.error("AI gateway error:", {
+        status: aiResponse.status,
+        statusText: aiResponse.statusText,
+        error: errorText
+      });
       return new Response(
-        JSON.stringify({ error: "AI analysis failed" }),
+        JSON.stringify({ 
+          error: `AI analysis failed: ${aiResponse.status} - ${errorText}` 
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

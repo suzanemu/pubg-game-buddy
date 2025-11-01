@@ -242,6 +242,13 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
 
         if (analysisError) {
           console.error(`AI analysis error for screenshot ${i + 1}:`, analysisError);
+          const errorMsg = analysisData?.error || analysisError.message || "Unknown error";
+          console.error(`Error details: ${errorMsg}`);
+          toast.error(`Screenshot ${i + 1} analysis failed: ${errorMsg}`);
+          uploadResults.push({ success: false, index: i });
+        } else if (analysisData?.error) {
+          console.error(`AI analysis returned error for screenshot ${i + 1}:`, analysisData.error);
+          toast.error(`Screenshot ${i + 1} analysis failed: ${analysisData.error}`);
           uploadResults.push({ success: false, index: i });
         } else {
           console.log(`AI analysis success for screenshot ${i + 1}:`, analysisData);
@@ -249,6 +256,7 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
         }
       } catch (error) {
         console.error(`Exception during AI analysis for screenshot ${i + 1}:`, error);
+        toast.error(`Screenshot ${i + 1} failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         uploadResults.push({ success: false, index: i });
       }
     }
