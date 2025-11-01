@@ -26,8 +26,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { Edit, Loader2, Image as ImageIcon } from "lucide-react";
+import { Edit, Loader2, Image as ImageIcon, Plus } from "lucide-react";
 import { calculatePoints } from "@/types/tournament";
+
+interface Team {
+  id: string;
+  name: string;
+}
 
 interface MatchScreenshot {
   id: string;
@@ -47,13 +52,20 @@ interface ScreenshotVerificationProps {
 
 const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationProps) => {
   const [screenshots, setScreenshots] = useState<MatchScreenshot[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [viewImageDialogOpen, setViewImageDialogOpen] = useState(false);
+  const [manualEntryDialogOpen, setManualEntryDialogOpen] = useState(false);
   const [selectedScreenshot, setSelectedScreenshot] = useState<MatchScreenshot | null>(null);
   const [editPlacement, setEditPlacement] = useState<number>(1);
   const [editKills, setEditKills] = useState<number>(0);
+  const [manualTeamId, setManualTeamId] = useState<string>("");
+  const [manualMatchNumber, setManualMatchNumber] = useState<number>(1);
+  const [manualPlacement, setManualPlacement] = useState<number>(1);
+  const [manualKills, setManualKills] = useState<number>(0);
   const [updating, setUpdating] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (selectedTournament) {
@@ -77,6 +89,7 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
       return;
     }
 
+    setTeams(teamsData || []);
     const teamMap = new Map(teamsData.map((team) => [team.id, team.name]));
 
     const { data, error } = await supabase
@@ -193,6 +206,105 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
     setUpdating(false);
   };
 
+  const handleManualEntry = async () => {
+    if (!manualTeamId) {
+      toast.error("Please select a team");
+      return;
+    }
+
+    // Validate inputs
+    const matchDataSchema = z.object({
+      matchNumber: z.number().int().min(1).max(100),
+      placement: z.number().int().min(1).max(18),
+      kills: z.number().int().min(0).max(50)
+    });
+
+    try {
+      matchDataSchema.parse({ 
+        matchNumber: manualMatchNumber,
+        placement: manualPlacement, 
+        kills: manualKills 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
+    }
+
+    setSaving(true);
+
+    const points = calculatePoints(manualPlacement, manualKills);
+
+    // Insert manual entry without screenshot_url
+    const { error: insertError } = await supabase
+      .from("match_screenshots")
+      .insert({
+        team_id: manualTeamId,
+        match_number: manualMatchNumber,
+        placement: manualPlacement,
+        kills: manualKills,
+        points: points,
+        screenshot_url: null, // Manual entry
+      });
+
+    if (insertError) {
+      toast.error("Failed to save manual entry");
+      console.error("Insert error:", insertError);
+      setSaving(false);
+      return;
+    }
+
+    // Recalculate team stats
+    const { data: teamData, error: teamError } = await supabase
+      .from("match_screenshots")
+      .select("*")
+      .eq("team_id", manualTeamId);
+
+    if (teamError) {
+      toast.error("Failed to recalculate team stats");
+      setSaving(false);
+      return;
+    }
+
+    const totalPoints = teamData.reduce((sum, s) => sum + (s.points || 0), 0);
+    const placementPoints = teamData.reduce((sum, s) => {
+      const placement = s.placement || 0;
+      const points = calculatePoints(placement, 0);
+      return sum + points;
+    }, 0);
+    const totalKills = teamData.reduce((sum, s) => sum + (s.kills || 0), 0);
+    const killPoints = totalKills;
+    const matchesPlayed = teamData.length;
+    const firstPlaceWins = teamData.filter((s) => s.placement === 1).length;
+
+    const { error: teamUpdateError } = await supabase
+      .from("teams")
+      .update({
+        total_points: totalPoints,
+        placement_points: placementPoints,
+        kill_points: killPoints,
+        total_kills: totalKills,
+        matches_played: matchesPlayed,
+        first_place_wins: firstPlaceWins,
+      })
+      .eq("id", manualTeamId);
+
+    if (teamUpdateError) {
+      toast.error("Failed to update team stats");
+    } else {
+      toast.success("Manual entry saved successfully!");
+      setManualEntryDialogOpen(false);
+      setManualTeamId("");
+      setManualMatchNumber(1);
+      setManualPlacement(1);
+      setManualKills(0);
+      fetchScreenshots();
+    }
+
+    setSaving(false);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -216,6 +328,14 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
 
   return (
     <>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-rajdhani font-bold text-foreground">Screenshot Verification</h2>
+        <Button onClick={() => setManualEntryDialogOpen(true)} className="btn-glow">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Manual Entry
+        </Button>
+      </div>
+
       {screenshots.length === 0 ? (
         <p className="text-center text-muted-foreground py-12 font-barlow">
           No screenshots uploaded yet
@@ -359,6 +479,80 @@ const ScreenshotVerification = ({ selectedTournament }: ScreenshotVerificationPr
               />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={manualEntryDialogOpen} onOpenChange={setManualEntryDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Manual Entry</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="team">Team</Label>
+              <Select value={manualTeamId} onValueChange={setManualTeamId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="matchNumber">Match Number</Label>
+              <Input
+                id="matchNumber"
+                type="number"
+                min="1"
+                value={manualMatchNumber}
+                onChange={(e) => setManualMatchNumber(parseInt(e.target.value) || 1)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="manualPlacement">Placement (1-18)</Label>
+              <Select
+                value={manualPlacement.toString()}
+                onValueChange={(value) => setManualPlacement(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 18 }, (_, i) => i + 1).map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="manualKills">Kills</Label>
+              <Input
+                id="manualKills"
+                type="number"
+                min="0"
+                value={manualKills}
+                onChange={(e) => setManualKills(parseInt(e.target.value) || 0)}
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Total Points: {calculatePoints(manualPlacement, manualKills)}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManualEntryDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleManualEntry} disabled={saving}>
+              {saving ? "Saving..." : "Save Entry"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

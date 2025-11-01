@@ -54,7 +54,7 @@ export type Database = {
           match_number: number | null
           placement: number | null
           points: number | null
-          screenshot_url: string
+          screenshot_url: string | null
           team_id: string
         }
         Insert: {
@@ -64,7 +64,7 @@ export type Database = {
           match_number?: number | null
           placement?: number | null
           points?: number | null
-          screenshot_url: string
+          screenshot_url?: string | null
           team_id: string
         }
         Update: {
@@ -74,7 +74,7 @@ export type Database = {
           match_number?: number | null
           placement?: number | null
           points?: number | null
-          screenshot_url?: string
+          screenshot_url?: string | null
           team_id?: string
         }
         Relationships: [
