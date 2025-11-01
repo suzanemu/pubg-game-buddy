@@ -259,6 +259,9 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
         toast.error(`Screenshot ${i + 1} failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         uploadResults.push({ success: false, index: i });
       }
+
+      // Small delay between analyses to avoid hitting rate limits
+      await new Promise((res) => setTimeout(res, 250));
     }
 
     // Show summary

@@ -70,22 +70,27 @@ serve(async (req) => {
 
     console.log("Analyzing screenshot:", screenshot_url);
 
-    // Call Lovable AI to analyze the screenshot
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Analyze this PUBG match results screenshot and extract:
+    // Call Lovable AI to analyze the screenshot with retries
+    async function analyzeWithRetry(imageUrl: string, maxRetries = 3) {
+      let attempt = 0;
+      let lastError: any = null;
+      while (attempt < maxRetries) {
+        try {
+          const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "text",
+                      text: `Analyze this PUBG match results screenshot and extract:
 
 1. PLACEMENT (rank): Look for the placement number, usually shown as "#2" or "2nd place" or similar. This is typically displayed prominently at the top of the screen. The placement should be a number from 1 to 18.
 
@@ -95,76 +100,84 @@ serve(async (req) => {
    - If you see "Eliminations: X" anywhere, use that total
    - The kills could be labeled as "Eliminations", "Kills", or shown with a number
 
-Important: 
+Important:
 - For kills/eliminations, you need to add up ALL team members' kills to get the total
 - Look carefully at the entire screenshot to find where the kill information is displayed
 - The placement is usually shown with a large "#" symbol followed by the rank number
 
 Return the total team placement and total team kills.`
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: screenshot_url
+                    },
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: imageUrl
+                      }
+                    }
+                  ]
                 }
-              }
-            ]
-          }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_match_data",
-              description: "Extract placement rank and kills from PUBG match screenshot",
-              parameters: {
-                type: "object",
-                properties: {
-                  placement: {
-                    type: "integer",
-                    description: "The team's placement/rank in the match (1-18)"
-                  },
-                  kills: {
-                    type: "integer",
-                    description: "Total number of kills in the match"
+              ],
+              tools: [
+                {
+                  type: "function",
+                  function: {
+                    name: "extract_match_data",
+                    description: "Extract placement rank and kills from PUBG match screenshot",
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        placement: {
+                          type: "integer",
+                          description: "The team's placement/rank in the match (1-18)"
+                        },
+                        kills: {
+                          type: "integer",
+                          description: "Total number of kills in the match"
+                        }
+                      },
+                      required: ["placement", "kills"],
+                      additionalProperties: false
+                    }
                   }
-                },
-                required: ["placement", "kills"],
-                additionalProperties: false
-              }
+                }
+              ],
+              tool_choice: { type: "function", function: { name: "extract_match_data" } }
+            }),
+          });
+
+          if (aiResponse.status === 429 || aiResponse.status === 402 || aiResponse.status >= 500) {
+            const txt = await aiResponse.text();
+            console.warn("AI temporary error, will retry:", aiResponse.status, txt);
+            lastError = new Error(`AI error ${aiResponse.status}: ${txt}`);
+          } else if (!aiResponse.ok) {
+            const txt = await aiResponse.text();
+            console.error("AI gateway error (non-retryable):", aiResponse.status, txt);
+            throw new Error(`AI analysis failed: ${aiResponse.status} - ${txt}`);
+          } else {
+            const aiData = await aiResponse.json();
+            console.log("AI Response:", JSON.stringify(aiData));
+
+            const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+            if (!toolCall) {
+              throw new Error("No tool call in AI response");
             }
+            const matchData = JSON.parse(toolCall.function.arguments);
+            return matchData as { placement: number; kills: number };
           }
-        ],
-        tool_choice: { type: "function", function: { name: "extract_match_data" } }
-      }),
-    });
+        } catch (e) {
+          lastError = e;
+          console.warn(`AI analysis attempt ${attempt + 1} failed:`, e);
+        }
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI gateway error:", {
-        status: aiResponse.status,
-        statusText: aiResponse.statusText,
-        error: errorText
-      });
-      return new Response(
-        JSON.stringify({ 
-          error: `AI analysis failed: ${aiResponse.status} - ${errorText}` 
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        // Backoff before next retry
+        attempt += 1;
+        const delayMs = 500 * attempt; // exponential-ish backoff
+        await new Promise((res) => setTimeout(res, delayMs));
+      }
+
+      throw lastError ?? new Error("AI analysis failed after retries");
     }
 
-    const aiData = await aiResponse.json();
-    console.log("AI Response:", JSON.stringify(aiData));
-
-    // Extract the tool call result
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      throw new Error("No tool call in AI response");
-    }
-
-    const matchData = JSON.parse(toolCall.function.arguments);
-    const { placement, kills } = matchData;
+    const { placement, kills } = await analyzeWithRetry(screenshot_url);
 
     console.log("Extracted data:", { placement, kills });
 
