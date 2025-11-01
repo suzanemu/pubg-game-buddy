@@ -9,9 +9,11 @@ import { Team } from "@/types/tournament";
 const Home = () => {
   const navigate = useNavigate();
   const [teams, setTeams] = useState<Team[]>([]);
+  const [tournamentName, setTournamentName] = useState<string>("PUBG TOURNAMENT");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    fetchTournament();
     fetchTeams();
     
     // Set up real-time subscription
@@ -35,6 +37,19 @@ const Home = () => {
     };
   }, []);
 
+  const fetchTournament = async () => {
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("name")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data) {
+      setTournamentName(data.name);
+    }
+  };
+
   const fetchTeams = async () => {
     const { data, error } = await supabase
       .from("teams")
@@ -52,6 +67,7 @@ const Home = () => {
         matchesPlayed: team.matches_played || 0,
         firstPlaceWins: team.first_place_wins || 0,
         tournament_id: team.tournament_id,
+        logo_url: team.logo_url,
       }));
       setTeams(formattedTeams);
     }
@@ -77,7 +93,7 @@ const Home = () => {
               </div>
               <div>
                 <h1 className="text-3xl font-rajdhani font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  PUBG TOURNAMENT
+                  {tournamentName}
                 </h1>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                   <Target className="h-3 w-3" />
