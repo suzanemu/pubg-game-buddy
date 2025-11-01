@@ -21,10 +21,9 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [userTeam, setUserTeam] = useState<Team | null>(null);
   const [tournament, setTournament] = useState<Tournament | null>(null);
-  const [matchNumber, setMatchNumber] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
-  const [uploadedMatches, setUploadedMatches] = useState<number>(0);
+  const [uploadedScreenshots, setUploadedScreenshots] = useState<number>(0);
   const [uploadStats, setUploadStats] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
@@ -100,10 +99,10 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
 
     const { data: screenshotsData } = await supabase
       .from("match_screenshots")
-      .select("match_number")
+      .select("id")
       .eq("team_id", sessionData.team_id);
 
-    setUploadedMatches(screenshotsData?.length || 0);
+    setUploadedScreenshots(screenshotsData?.length || 0);
   };
 
   const fetchTournament = async () => {
@@ -151,12 +150,19 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
     const files = event.target.files;
     if (!files || files.length === 0 || !userTeam) return;
 
-    // Limit to 4 files
-    const filesToUpload = Array.from(files).slice(0, 4);
-    
-    if (filesToUpload.length > 4) {
-      toast.error("You can only upload up to 4 screenshots at a time");
+    // Check total screenshot limit
+    const remainingSlots = 12 - uploadedScreenshots;
+    if (remainingSlots <= 0) {
+      toast.error("You have already uploaded the maximum of 12 screenshots");
       return;
+    }
+
+    // Limit files to remaining slots and max 4 at a time
+    const maxFiles = Math.min(files.length, remainingSlots, 4);
+    const filesToUpload = Array.from(files).slice(0, maxFiles);
+    
+    if (files.length > maxFiles) {
+      toast.error(`You can only upload ${maxFiles} more screenshot(s)`);
     }
 
     // Validate all files
@@ -178,8 +184,7 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
     setUploading(true);
     setUploadStats({ current: 0, total: filesToUpload.length });
     
-    let currentMatchNum = matchNumber;
-    const uploadResults: Array<{ success: boolean; matchNum: number }> = [];
+    const uploadResults: Array<{ success: boolean; index: number }> = [];
 
     for (let i = 0; i < filesToUpload.length; i++) {
       const file = filesToUpload[i];
@@ -187,27 +192,8 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
       setUploadStats({ current: i + 1, total: filesToUpload.length });
       setUploadProgress(`Uploading screenshot ${i + 1} of ${filesToUpload.length}...`);
 
-      if (tournament && currentMatchNum > tournament.total_matches) {
-        toast.error(`Match ${currentMatchNum} exceeds tournament limit of ${tournament.total_matches}`);
-        break;
-      }
-
-      // Check if match already exists
-      const { data: existing } = await supabase
-        .from("match_screenshots")
-        .select("id")
-        .eq("team_id", userTeam.id)
-        .eq("match_number", currentMatchNum)
-        .maybeSingle();
-
-      if (existing) {
-        toast.error(`Match ${currentMatchNum} already uploaded, skipping...`);
-        currentMatchNum++;
-        continue;
-      }
-
       const fileExt = file.name.split(".").pop();
-      const fileName = `${userTeam.id}/${currentMatchNum}-${Date.now()}-${i}.${fileExt}`;
+      const fileName = `${userTeam.id}/${Date.now()}-${i}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("screenshots")
@@ -215,8 +201,7 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
 
       if (uploadError) {
         toast.error(`Failed to upload screenshot ${i + 1}`);
-        uploadResults.push({ success: false, matchNum: currentMatchNum });
-        currentMatchNum++;
+        uploadResults.push({ success: false, index: i });
         continue;
       }
 
@@ -224,56 +209,46 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
         .from("screenshots")
         .getPublicUrl(fileName);
 
-      setUploadProgress(`Saving match ${currentMatchNum} data...`);
+      setUploadProgress(`Saving screenshot ${i + 1} data...`);
 
-      const { error: insertError } = await supabase.from("match_screenshots").insert({
-        team_id: userTeam.id,
-        match_number: currentMatchNum,
-        screenshot_url: urlData.publicUrl,
-      });
+      const { error: insertError, data: insertData } = await supabase
+        .from("match_screenshots")
+        .insert({
+          team_id: userTeam.id,
+          screenshot_url: urlData.publicUrl,
+        })
+        .select("id")
+        .single();
 
-      if (insertError) {
-        toast.error(`Failed to save match ${currentMatchNum} screenshot`);
-        uploadResults.push({ success: false, matchNum: currentMatchNum });
-        currentMatchNum++;
+      if (insertError || !insertData) {
+        toast.error(`Failed to save screenshot ${i + 1}`);
+        uploadResults.push({ success: false, index: i });
         continue;
       }
 
-      // Get the inserted screenshot ID
-      const { data: screenshotData } = await supabase
-        .from("match_screenshots")
-        .select("id")
-        .eq("team_id", userTeam.id)
-        .eq("match_number", currentMatchNum)
-        .single();
+      setUploadProgress(`Analyzing screenshot ${i + 1} with AI...`);
 
-      if (screenshotData) {
-        setUploadProgress(`Analyzing match ${currentMatchNum} with AI...`);
-
-        // Call AI analysis function
-        try {
-          const { data: analysisData, error: analysisError } = await supabase.functions.invoke("analyze-screenshot", {
-            body: {
-              screenshot_url: urlData.publicUrl,
-              screenshot_id: screenshotData.id,
-              team_id: userTeam.id
-            }
-          });
-
-          if (analysisError) {
-            console.error(`AI analysis error for match ${currentMatchNum}:`, analysisError);
-            uploadResults.push({ success: false, matchNum: currentMatchNum });
-          } else {
-            console.log(`AI analysis success for match ${currentMatchNum}:`, analysisData);
-            uploadResults.push({ success: true, matchNum: currentMatchNum });
+      // Call AI analysis function
+      try {
+        const { data: analysisData, error: analysisError } = await supabase.functions.invoke("analyze-screenshot", {
+          body: {
+            screenshot_url: urlData.publicUrl,
+            screenshot_id: insertData.id,
+            team_id: userTeam.id
           }
-        } catch (error) {
-          console.error(`Exception during AI analysis for match ${currentMatchNum}:`, error);
-          uploadResults.push({ success: false, matchNum: currentMatchNum });
-        }
-      }
+        });
 
-      currentMatchNum++;
+        if (analysisError) {
+          console.error(`AI analysis error for screenshot ${i + 1}:`, analysisError);
+          uploadResults.push({ success: false, index: i });
+        } else {
+          console.log(`AI analysis success for screenshot ${i + 1}:`, analysisData);
+          uploadResults.push({ success: true, index: i });
+        }
+      } catch (error) {
+        console.error(`Exception during AI analysis for screenshot ${i + 1}:`, error);
+        uploadResults.push({ success: false, index: i });
+      }
     }
 
     // Show summary
@@ -281,13 +256,12 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
     const failCount = uploadResults.filter(r => !r.success).length;
     
     if (successCount > 0) {
-      toast.success(`Successfully analyzed ${successCount} match(es)`);
+      toast.success(`Successfully analyzed ${successCount} screenshot(s)`);
     }
     if (failCount > 0) {
-      toast.error(`${failCount} match(es) failed analysis - admin will verify manually`);
+      toast.error(`${failCount} screenshot(s) failed analysis - admin will verify manually`);
     }
 
-    setMatchNumber(currentMatchNum);
     fetchUserTeam();
 
     setUploading(false);
@@ -372,31 +346,19 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
           <div className="card-tactical p-6 border-2 border-primary/20">
             <h2 className="text-xl font-rajdhani font-bold uppercase tracking-wide mb-4 flex items-center gap-2">
               <Upload className="h-5 w-5 text-accent" />
-              Upload Screenshot
+              Upload Screenshots
             </h2>
-            {tournament && uploadedMatches >= tournament.total_matches ? (
+            {uploadedScreenshots >= 12 ? (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  You have uploaded all {tournament.total_matches} matches for this tournament.
+                  You have uploaded the maximum of 12 screenshots.
                 </AlertDescription>
               </Alert>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="matchNumber">Match Number</Label>
-                  <Input
-                    id="matchNumber"
-                    type="number"
-                    min="1"
-                    max={tournament?.total_matches || 6}
-                    value={matchNumber}
-                    onChange={(e) => setMatchNumber(parseInt(e.target.value) || 1)}
-                    disabled={uploading}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="screenshot">Screenshots (up to 4)</Label>
+                  <Label htmlFor="screenshot">Screenshots (up to 4 at once)</Label>
                   <Input
                     id="screenshot"
                     type="file"
@@ -420,7 +382,7 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
                   </div>
                 )}
                 <p className="text-sm text-muted-foreground">
-                  Upload up to 4 match screenshots at once. They will be automatically analyzed by AI starting from Match {matchNumber}.
+                  Upload up to 4 screenshots at once. Each will be automatically analyzed by AI. ({uploadedScreenshots}/12 uploaded)
                 </p>
               </div>
             )}
