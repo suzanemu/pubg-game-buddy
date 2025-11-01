@@ -359,28 +359,38 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
       }
 
       // Update team stats if screenshot had valid data
-      if (screenshotData.points !== null && screenshotData.kills !== null && screenshotData.placement !== null) {
-        const { data: teamData } = await supabase
+      if (screenshotData.kills !== null && screenshotData.placement !== null) {
+        const { data: teamData, error: teamFetchError } = await supabase
           .from("teams")
           .select("total_points, kill_points, placement_points, total_kills, matches_played, first_place_wins")
           .eq("id", screenshotData.team_id)
           .single();
 
+        if (teamFetchError) {
+          console.error("Failed to fetch team for stat update:", teamFetchError);
+        }
+
         if (teamData) {
           const placementPoints = PLACEMENT_POINTS[screenshotData.placement] || 0;
           const killPoints = screenshotData.kills * KILL_POINTS;
-          
-          await supabase
+          const totalPoints = placementPoints + killPoints;
+
+          const { error: updateError } = await supabase
             .from("teams")
             .update({
-              total_points: Math.max(0, teamData.total_points - screenshotData.points),
-              placement_points: Math.max(0, teamData.placement_points - placementPoints),
-              kill_points: Math.max(0, teamData.kill_points - killPoints),
-              total_kills: Math.max(0, teamData.total_kills - screenshotData.kills),
-              matches_played: Math.max(0, teamData.matches_played - 1),
-              first_place_wins: screenshotData.placement === 1 ? Math.max(0, teamData.first_place_wins - 1) : teamData.first_place_wins,
+              total_points: Math.max(0, (teamData.total_points ?? 0) - totalPoints),
+              placement_points: Math.max(0, (teamData.placement_points ?? 0) - placementPoints),
+              kill_points: Math.max(0, (teamData.kill_points ?? 0) - killPoints),
+              total_kills: Math.max(0, (teamData.total_kills ?? 0) - screenshotData.kills),
+              matches_played: Math.max(0, (teamData.matches_played ?? 0) - 1),
+              first_place_wins: screenshotData.placement === 1 ? Math.max(0, (teamData.first_place_wins ?? 0) - 1) : (teamData.first_place_wins ?? 0),
             })
             .eq("id", screenshotData.team_id);
+
+          if (updateError) {
+            console.error("Failed to update team stats after deletion:", updateError);
+            toast.error("Deleted screenshot, but failed to update team points.");
+          }
         }
       }
 
