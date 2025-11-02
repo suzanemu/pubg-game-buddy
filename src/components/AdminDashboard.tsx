@@ -107,50 +107,54 @@ const AdminDashboard = ({ userId }: AdminDashboardProps) => {
   return (
     <div className="min-h-screen bg-background tactical-grid">
       <header className="border-b-2 border-primary/30 bg-gradient-tactical backdrop-blur-sm sticky top-0 z-50 shadow-glow-orange">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-rajdhani font-black text-foreground uppercase tracking-wider">
-              <span className="bg-gradient-primary bg-clip-text text-transparent">Admin Dashboard</span>
-            </h1>
-            {selectedTournament && (
-              <div className="mt-2">
-                <Select value={selectedTournament} onValueChange={setSelectedTournament}>
-                  <SelectTrigger className="w-[250px] border-primary/30">
-                    <SelectValue placeholder="Select Tournament" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tournaments.map((tournament) => (
-                      <SelectItem key={tournament.id} value={tournament.id}>
-                        {tournament.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/")} className="btn-glow">
-              <Home className="mr-2 h-4 w-4" />
-              Home
-            </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-rajdhani font-black text-foreground uppercase tracking-wider">
+                <span className="bg-gradient-primary bg-clip-text text-transparent">Admin Dashboard</span>
+              </h1>
+              {selectedTournament && (
+                <div className="mt-2">
+                  <Select value={selectedTournament} onValueChange={setSelectedTournament}>
+                    <SelectTrigger className="w-full sm:w-[250px] border-primary/30">
+                      <SelectValue placeholder="Select Tournament" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tournaments.map((tournament) => (
+                        <SelectItem key={tournament.id} value={tournament.id}>
+                          {tournament.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate("/")} className="btn-glow flex-1 sm:flex-initial" size="sm">
+                <Home className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Home</span>
+              </Button>
+              <Button variant="outline" onClick={handleLogout} className="flex-1 sm:flex-initial" size="sm">
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="standings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-secondary/50 border-2 border-primary/20">
-            <TabsTrigger value="standings" className="font-rajdhani font-bold uppercase">Standings</TabsTrigger>
-            <TabsTrigger value="manual" className="font-rajdhani font-bold uppercase">Manual Points</TabsTrigger>
-            <TabsTrigger value="verify" className="font-rajdhani font-bold uppercase">Verify Screenshots</TabsTrigger>
-            <TabsTrigger value="teams" className="font-rajdhani font-bold uppercase">Manage Teams</TabsTrigger>
-            <TabsTrigger value="tournaments" className="font-rajdhani font-bold uppercase">Manage Tournaments</TabsTrigger>
-          </TabsList>
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <Tabs defaultValue="standings" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-5 bg-secondary/50 border-2 border-primary/20">
+              <TabsTrigger value="standings" className="font-rajdhani font-bold uppercase text-xs sm:text-sm whitespace-nowrap">Standings</TabsTrigger>
+              <TabsTrigger value="manual" className="font-rajdhani font-bold uppercase text-xs sm:text-sm whitespace-nowrap">Manual</TabsTrigger>
+              <TabsTrigger value="verify" className="font-rajdhani font-bold uppercase text-xs sm:text-sm whitespace-nowrap">Verify</TabsTrigger>
+              <TabsTrigger value="teams" className="font-rajdhani font-bold uppercase text-xs sm:text-sm whitespace-nowrap">Teams</TabsTrigger>
+              <TabsTrigger value="tournaments" className="font-rajdhani font-bold uppercase text-xs sm:text-sm whitespace-nowrap">Tournaments</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="standings" className="space-y-4">
             <Standings teams={teams} isAdmin={true} onTeamsUpdate={fetchTeams} />

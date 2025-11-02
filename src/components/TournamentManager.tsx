@@ -155,16 +155,16 @@ const TournamentManager = ({ onTournamentSelect }: TournamentManagerProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="card-tactical border-2 border-primary/20">
-        <div className="bg-gradient-tactical p-6 border-b-2 border-primary/20">
-          <h2 className="flex items-center gap-2 font-rajdhani font-black text-2xl uppercase tracking-wider">
-            <Trophy className="h-6 w-6 text-primary" />
+        <div className="bg-gradient-tactical p-4 sm:p-6 border-b-2 border-primary/20">
+          <h2 className="flex items-center gap-2 font-rajdhani font-black text-xl sm:text-2xl uppercase tracking-wider">
+            <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             <span className="bg-gradient-primary bg-clip-text text-transparent">Create Tournament</span>
           </h2>
-          <p className="text-muted-foreground font-barlow mt-1">Set up a new PUBG tournament</p>
+          <p className="text-muted-foreground font-barlow mt-1 text-sm sm:text-base">Set up a new PUBG tournament</p>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <form onSubmit={handleCreateTournament} className="space-y-4">
             <div>
               <label className="text-sm font-rajdhani font-bold uppercase tracking-wide">Tournament Name</label>
@@ -205,38 +205,38 @@ const TournamentManager = ({ onTournamentSelect }: TournamentManagerProps) => {
       </div>
 
       <div className="card-tactical border-2 border-primary/20">
-        <div className="bg-gradient-tactical p-6 border-b-2 border-primary/20">
-          <h2 className="font-rajdhani font-black text-2xl uppercase tracking-wider">Existing Tournaments</h2>
+        <div className="bg-gradient-tactical p-4 sm:p-6 border-b-2 border-primary/20">
+          <h2 className="font-rajdhani font-black text-xl sm:text-2xl uppercase tracking-wider">Existing Tournaments</h2>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="space-y-2">
             {tournaments.map((tournament) => (
               <div
                 key={tournament.id}
-                className="flex items-center justify-between p-4 border-2 border-border/30 rounded-lg hover:border-primary/30 transition-colors bg-secondary/20"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border-2 border-border/30 rounded-lg hover:border-primary/30 transition-colors bg-secondary/20"
               >
-                <div className="flex items-center gap-3 flex-1">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <div className="flex-1">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <Calendar className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
                     {editingId === tournament.id ? (
                       <Input
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="font-rajdhani font-bold text-lg border-primary/30"
+                        className="font-rajdhani font-bold text-base sm:text-lg border-primary/30"
                         autoFocus
                       />
                     ) : (
-                      <h3 className="font-rajdhani font-bold text-lg text-foreground">{tournament.name}</h3>
+                      <h3 className="font-rajdhani font-bold text-base sm:text-lg text-foreground truncate">{tournament.name}</h3>
                     )}
                     {tournament.description && (
-                      <p className="text-sm text-muted-foreground font-barlow">{tournament.description}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground font-barlow line-clamp-2">{tournament.description}</p>
                     )}
                     <p className="text-xs text-muted-foreground font-barlow mt-1">
                       {tournament.total_matches} matches
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
                   {editingId === tournament.id ? (
                     <>
                       <Button

@@ -391,66 +391,68 @@ const PlayerDashboard = ({ userId }: PlayerDashboardProps) => {
   return (
     <div className="min-h-screen bg-background tactical-grid">
       <header className="border-b-2 border-primary/30 bg-gradient-tactical backdrop-blur-sm sticky top-0 z-50 shadow-glow-orange">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-rajdhani font-black text-foreground uppercase tracking-wider">
-              <span className="bg-gradient-primary bg-clip-text text-transparent">{userTeam.name}</span>
-            </h1>
-            {tournament && (
-              <p className="text-sm text-muted-foreground font-barlow">{tournament.name}</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/")} className="btn-glow">
-              <Home className="mr-2 h-4 w-4" />
-              Home
-            </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-rajdhani font-black text-foreground uppercase tracking-wider truncate">
+                <span className="bg-gradient-primary bg-clip-text text-transparent">{userTeam.name}</span>
+              </h1>
+              {tournament && (
+                <p className="text-xs sm:text-sm text-muted-foreground font-barlow truncate">{tournament.name}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate("/")} className="btn-glow flex-1 sm:flex-initial" size="sm">
+                <Home className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Home</span>
+              </Button>
+              <Button variant="outline" onClick={handleLogout} className="flex-1 sm:flex-initial" size="sm">
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="card-tactical p-6 border-2 border-primary/20 hover-lift">
-            <h2 className="text-xl font-rajdhani font-bold uppercase tracking-wide mb-4 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-primary" />
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-8">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+          <div className="card-tactical p-4 sm:p-6 border-2 border-primary/20 hover-lift">
+            <h2 className="text-lg sm:text-xl font-rajdhani font-bold uppercase tracking-wide mb-3 sm:mb-4 flex items-center gap-2">
+              <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Team Stats
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-barlow">Total Points</span>
-                <span className="stat-counter text-2xl">{userTeam.totalPoints}</span>
+                <span className="text-muted-foreground font-barlow text-sm sm:text-base">Total Points</span>
+                <span className="stat-counter text-xl sm:text-2xl">{userTeam.totalPoints}</span>
               </div>
-              <div className="flex justify-between items-center border-t border-border/30 pt-3">
-                <span className="text-muted-foreground font-barlow">Placement Points</span>
-                <span className="font-rajdhani font-bold text-lg text-foreground">{userTeam.placementPoints}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-2 sm:pt-3">
+                <span className="text-muted-foreground font-barlow text-sm sm:text-base">Placement Points</span>
+                <span className="font-rajdhani font-bold text-base sm:text-lg text-foreground">{userTeam.placementPoints}</span>
               </div>
-              <div className="flex justify-between items-center border-t border-border/30 pt-3">
-                <span className="text-muted-foreground font-barlow">Kill Points</span>
-                <span className="font-rajdhani font-bold text-lg text-foreground">{userTeam.killPoints}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-2 sm:pt-3">
+                <span className="text-muted-foreground font-barlow text-sm sm:text-base">Kill Points</span>
+                <span className="font-rajdhani font-bold text-base sm:text-lg text-foreground">{userTeam.killPoints}</span>
               </div>
-              <div className="flex justify-between items-center border-t border-border/30 pt-3">
-                <span className="text-muted-foreground font-barlow">Total Kills</span>
-                <span className="kill-feed text-lg">{userTeam.totalKills}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-2 sm:pt-3">
+                <span className="text-muted-foreground font-barlow text-sm sm:text-base">Total Kills</span>
+                <span className="kill-feed text-base sm:text-lg">{userTeam.totalKills}</span>
               </div>
-              <div className="flex justify-between items-center border-t border-border/30 pt-3">
-                <span className="text-muted-foreground font-barlow">Matches Played</span>
-                <span className="font-rajdhani font-bold text-lg text-foreground">{userTeam.matchesPlayed}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-2 sm:pt-3">
+                <span className="text-muted-foreground font-barlow text-sm sm:text-base">Matches Played</span>
+                <span className="font-rajdhani font-bold text-base sm:text-lg text-foreground">{userTeam.matchesPlayed}</span>
               </div>
-              <div className="flex justify-between items-center border-t border-border/30 pt-3">
-                <span className="text-muted-foreground font-barlow">Chicken Dinners</span>
-                <span className="font-rajdhani font-bold text-lg text-accent">{userTeam.firstPlaceWins}</span>
+              <div className="flex justify-between items-center border-t border-border/30 pt-2 sm:pt-3">
+                <span className="text-muted-foreground font-barlow text-sm sm:text-base">Chicken Dinners</span>
+                <span className="font-rajdhani font-bold text-base sm:text-lg text-accent">{userTeam.firstPlaceWins}</span>
               </div>
             </div>
           </div>
 
-          <div className="card-tactical p-6 border-2 border-primary/20">
-            <h2 className="text-xl font-rajdhani font-bold uppercase tracking-wide mb-4 flex items-center gap-2">
-              <Upload className="h-5 w-5 text-accent" />
+          <div className="card-tactical p-4 sm:p-6 border-2 border-primary/20">
+            <h2 className="text-lg sm:text-xl font-rajdhani font-bold uppercase tracking-wide mb-3 sm:mb-4 flex items-center gap-2">
+              <Upload className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
               Upload Screenshots
             </h2>
             {uploadedScreenshots >= 12 ? (

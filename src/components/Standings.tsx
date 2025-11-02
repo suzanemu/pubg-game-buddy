@@ -178,24 +178,24 @@ const Standings = ({ teams, isAdmin = false, onTeamsUpdate }: StandingsProps) =>
           {/* Podium Base Effect */}
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-primary/5 to-transparent rounded-lg blur-xl"></div>
           
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+          <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 items-end">
             {/* Rank 2 - Left */}
             {top3[1] && (
-              <div className="order-1 md:order-1 transform md:translate-y-6">
+              <div className="order-2 sm:order-1 transform sm:translate-y-6">
                 <PodiumCard team={top3[1]} rank={2} />
               </div>
             )}
             
             {/* Rank 1 - Center */}
             {top3[0] && (
-              <div className="order-2 md:order-2 transform scale-105">
+              <div className="order-1 sm:order-2 transform sm:scale-105">
                 <PodiumCard team={top3[0]} rank={1} />
               </div>
             )}
             
             {/* Rank 3 - Right */}
             {top3[2] && (
-              <div className="order-3 md:order-3 transform md:translate-y-10">
+              <div className="order-3 sm:order-3 transform sm:translate-y-10">
                 <PodiumCard team={top3[2]} rank={3} />
               </div>
             )}
@@ -206,104 +206,174 @@ const Standings = ({ teams, isAdmin = false, onTeamsUpdate }: StandingsProps) =>
       {/* Remaining Teams Table */}
       {remaining.length > 0 && (
         <div className="card-tactical border-2 overflow-hidden">
-          <div className="bg-gradient-tactical p-4 border-b-2 border-border/50">
-            <h3 className="font-rajdhani font-bold text-xl uppercase tracking-wider flex items-center gap-2">
-              <Award className="h-5 w-5 text-primary" />
+          <div className="bg-gradient-tactical p-3 sm:p-4 border-b-2 border-border/50">
+            <h3 className="font-rajdhani font-bold text-lg sm:text-xl uppercase tracking-wider flex items-center gap-2">
+              <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Other Competitors
             </h3>
           </div>
           
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-secondary/50 hover:bg-secondary/50 border-b-2 border-primary/20">
-                <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider w-24">
-                  Rank
-                </TableHead>
-                <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider">
-                  Team Name
-                </TableHead>
-                <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
-                  Elims
-                </TableHead>
-                <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
-                  Place
-                </TableHead>
-                <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
-                  WWCD
-                </TableHead>
-                <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
-                  Total
-                </TableHead>
-                {isAdmin && (
-                  <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
-                    Actions
-                  </TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {remaining.map((team, index) => (
-                <TableRow 
-                  key={team.id} 
-                  className="hover:bg-secondary/30 border-b border-border/30 transition-colors group"
-                >
-                  <TableCell className="font-rajdhani font-bold text-lg text-muted-foreground group-hover:text-primary transition-colors">
-                    #{index + 4}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      {team.logo_url ? (
-                        <img 
-                          src={team.logo_url} 
-                          alt={`${team.name} logo`}
-                          className="w-10 h-10 rounded-lg object-cover border border-primary/30 group-hover:border-primary/50 transition-colors"
-                        />
-                      ) : (
-                        <div className="relative w-10 h-10 rounded-lg bg-gradient-primary/20 flex items-center justify-center border border-primary/30 group-hover:border-primary/50 transition-colors">
-                          <Trophy className="w-5 h-5 text-primary" />
-                        </div>
-                      )}
-                      <span className="font-rajdhani font-bold text-lg text-foreground">
-                        {team.name}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="font-rajdhani font-bold text-lg text-foreground inline-flex items-center gap-1">
-                      <Crosshair className="w-4 h-4 text-destructive/60" />
-                      {team.totalKills}
+          {/* Mobile Card View */}
+          <div className="block md:hidden">
+            {remaining.map((team, index) => (
+              <div key={team.id} className="p-4 border-b border-border/30 hover:bg-secondary/30 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className="font-rajdhani font-bold text-xl text-muted-foreground">
+                      #{index + 4}
                     </span>
-                  </TableCell>
-                  <TableCell className="text-center font-rajdhani font-bold text-lg text-foreground">
-                    {team.placementPoints}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="font-rajdhani font-bold text-lg text-foreground inline-flex items-center gap-1 justify-center">
-                      {team.firstPlaceWins > 0 && <Crown className="w-4 h-4 text-accent" />}
-                      {team.firstPlaceWins}
+                    {team.logo_url ? (
+                      <img 
+                        src={team.logo_url} 
+                        alt={`${team.name} logo`}
+                        className="w-12 h-12 rounded-lg object-cover border border-primary/30 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="relative w-12 h-12 rounded-lg bg-gradient-primary/20 flex items-center justify-center border border-primary/30 flex-shrink-0">
+                        <Trophy className="w-6 h-6 text-primary" />
+                      </div>
+                    )}
+                    <span className="font-rajdhani font-bold text-lg text-foreground truncate">
+                      {team.name}
                     </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="font-rajdhani font-black text-xl bg-gradient-primary bg-clip-text text-transparent">
-                      {team.totalPoints}
-                    </span>
-                  </TableCell>
+                  </div>
                   {isAdmin && (
-                    <TableCell className="text-center">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleResetTeam(team.id, team.name)}
-                        className="border-destructive/50 hover:bg-destructive/10"
-                      >
-                        <RotateCcw className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleResetTeam(team.id, team.name)}
+                      className="border-destructive/50 hover:bg-destructive/10 flex-shrink-0 ml-2"
+                    >
+                      <RotateCcw className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-3 text-center">
+                  <div>
+                    <div className="text-xs text-muted-foreground font-rajdhani uppercase mb-1">Elims</div>
+                    <div className="font-rajdhani font-bold text-base text-foreground flex items-center justify-center gap-1">
+                      <Crosshair className="w-3 h-3 text-destructive/60" />
+                      {team.totalKills}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-rajdhani uppercase mb-1">Place</div>
+                    <div className="font-rajdhani font-bold text-base text-foreground">
+                      {team.placementPoints}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-rajdhani uppercase mb-1">WWCD</div>
+                    <div className="font-rajdhani font-bold text-base text-foreground flex items-center justify-center gap-1">
+                      {team.firstPlaceWins > 0 && <Crown className="w-3 h-3 text-accent" />}
+                      {team.firstPlaceWins}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-rajdhani uppercase mb-1">Total</div>
+                    <div className="font-rajdhani font-black text-lg bg-gradient-primary bg-clip-text text-transparent">
+                      {team.totalPoints}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-secondary/50 hover:bg-secondary/50 border-b-2 border-primary/20">
+                  <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider w-24">
+                    Rank
+                  </TableHead>
+                  <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider">
+                    Team Name
+                  </TableHead>
+                  <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
+                    Elims
+                  </TableHead>
+                  <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
+                    Place
+                  </TableHead>
+                  <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
+                    WWCD
+                  </TableHead>
+                  <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
+                    Total
+                  </TableHead>
+                  {isAdmin && (
+                    <TableHead className="text-muted-foreground font-rajdhani font-bold text-sm uppercase tracking-wider text-center">
+                      Actions
+                    </TableHead>
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {remaining.map((team, index) => (
+                  <TableRow 
+                    key={team.id} 
+                    className="hover:bg-secondary/30 border-b border-border/30 transition-colors group"
+                  >
+                    <TableCell className="font-rajdhani font-bold text-lg text-muted-foreground group-hover:text-primary transition-colors">
+                      #{index + 4}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        {team.logo_url ? (
+                          <img 
+                            src={team.logo_url} 
+                            alt={`${team.name} logo`}
+                            className="w-10 h-10 rounded-lg object-cover border border-primary/30 group-hover:border-primary/50 transition-colors"
+                          />
+                        ) : (
+                          <div className="relative w-10 h-10 rounded-lg bg-gradient-primary/20 flex items-center justify-center border border-primary/30 group-hover:border-primary/50 transition-colors">
+                            <Trophy className="w-5 h-5 text-primary" />
+                          </div>
+                        )}
+                        <span className="font-rajdhani font-bold text-lg text-foreground">
+                          {team.name}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="font-rajdhani font-bold text-lg text-foreground inline-flex items-center gap-1">
+                        <Crosshair className="w-4 h-4 text-destructive/60" />
+                        {team.totalKills}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center font-rajdhani font-bold text-lg text-foreground">
+                      {team.placementPoints}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="font-rajdhani font-bold text-lg text-foreground inline-flex items-center gap-1 justify-center">
+                        {team.firstPlaceWins > 0 && <Crown className="w-4 h-4 text-accent" />}
+                        {team.firstPlaceWins}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="font-rajdhani font-black text-xl bg-gradient-primary bg-clip-text text-transparent">
+                        {team.totalPoints}
+                      </span>
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-center">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleResetTeam(team.id, team.name)}
+                          className="border-destructive/50 hover:bg-destructive/10"
+                        >
+                          <RotateCcw className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
     </div>

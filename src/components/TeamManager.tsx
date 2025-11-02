@@ -184,8 +184,8 @@ export default function TeamManager() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="card-tactical p-6 border-2 border-primary/20">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="card-tactical p-4 sm:p-6 border-2 border-primary/20">
         <div className="mb-4">
           <Label className="font-rajdhani font-bold uppercase text-sm">Select Tournament</Label>
           <Select value={selectedTournament} onValueChange={setSelectedTournament}>
@@ -242,31 +242,31 @@ export default function TeamManager() {
         </form>
       </div>
 
-      <div className="card-tactical p-6 border-2 border-primary/20">
-        <h3 className="font-rajdhani font-bold uppercase tracking-wide text-xl mb-4">Teams</h3>
+      <div className="card-tactical p-4 sm:p-6 border-2 border-primary/20">
+        <h3 className="font-rajdhani font-bold uppercase tracking-wide text-lg sm:text-xl mb-3 sm:mb-4">Teams</h3>
         <div className="space-y-2">
           {teams.map((team) => (
-            <div key={team.id} className="flex items-center justify-between p-4 border-2 border-border/30 rounded-lg hover:border-primary/30 transition-colors bg-secondary/20">
-              <div className="flex items-center gap-3">
+            <div key={team.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border-2 border-border/30 rounded-lg hover:border-primary/30 transition-colors bg-secondary/20">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 {team.logo_url ? (
                   <img 
                     src={team.logo_url} 
                     alt={`${team.name} logo`}
-                    className="w-12 h-12 rounded-lg object-cover border-2 border-primary/30"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border-2 border-primary/30 flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg bg-gradient-primary/20 flex items-center justify-center border border-primary/30">
-                    <ImageIcon className="w-6 h-6 text-primary" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-primary/20 flex items-center justify-center border border-primary/30 flex-shrink-0">
+                    <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </div>
                 )}
-                <div>
-                  <p className="font-rajdhani font-bold text-lg text-foreground">{team.name}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-rajdhani font-bold text-base sm:text-lg text-foreground truncate">{team.name}</p>
                   {team.access_code && (
-                    <p className="text-sm text-muted-foreground font-mono">Code: {team.access_code}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground font-mono truncate">Code: {team.access_code}</p>
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 self-end sm:self-auto">
                 {team.access_code && (
                   <Button
                     size="icon"
