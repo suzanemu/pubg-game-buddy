@@ -1,4 +1,4 @@
-import { Trophy, Award, Crown, Target, Crosshair, RotateCcw } from "lucide-react";
+import { Trophy, Award, Crown, Target, Crosshair, RotateCcw, Download } from "lucide-react";
 import { Team } from "@/types/tournament";
 import {
   Table,
@@ -58,6 +58,45 @@ const Standings = ({ teams, isAdmin = false, onTeamsUpdate }: StandingsProps) =>
       });
       onTeamsUpdate?.();
     }
+  };
+
+  const handleDownloadCSV = () => {
+    // Create CSV headers
+    const headers = ["Rank", "Team Name", "Total Points", "Placement Points", "Kill Points", "Total Kills", "Matches Played", "First Place Wins"];
+    
+    // Create CSV rows
+    const rows = sortedTeams.map((team, index) => [
+      index + 1,
+      team.name,
+      team.totalPoints,
+      team.placementPoints,
+      team.killPoints,
+      team.totalKills,
+      team.matchesPlayed,
+      team.firstPlaceWins,
+    ]);
+    
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `tournament-standings-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Success",
+      description: "Tournament standings downloaded successfully",
+    });
   };
 
   const top3 = sortedTeams.slice(0, 3);
@@ -162,13 +201,26 @@ const Standings = ({ teams, isAdmin = false, onTeamsUpdate }: StandingsProps) =>
       <div className="relative">
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-12 bg-gradient-primary rounded-r-full blur-sm"></div>
         <div className="border-l-4 border-primary pl-6">
-          <div className="flex items-center gap-3">
-            <Target className="h-8 w-8 text-primary" />
-            <h2 className="text-4xl font-rajdhani font-black text-foreground uppercase tracking-wider">
-              Team Rankings
-            </h2>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-3">
+                <Target className="h-8 w-8 text-primary" />
+                <h2 className="text-3xl sm:text-4xl font-rajdhani font-black text-foreground uppercase tracking-wider">
+                  Team Rankings
+                </h2>
+              </div>
+              <p className="text-muted-foreground font-barlow mt-1 ml-11 text-sm sm:text-base">Live tournament standings</p>
+            </div>
+            {isAdmin && (
+              <Button
+                onClick={handleDownloadCSV}
+                className="bg-gradient-primary hover:opacity-90 gap-2"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Download CSV</span>
+              </Button>
+            )}
           </div>
-          <p className="text-muted-foreground font-barlow mt-1 ml-11">Live tournament standings</p>
         </div>
       </div>
 
