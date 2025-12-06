@@ -25,7 +25,8 @@ const Standings = ({ teams, isAdmin = false, onTeamsUpdate }: StandingsProps) =>
     if (b.totalPoints !== a.totalPoints) {
       return b.totalPoints - a.totalPoints;
     }
-    return b.totalKills - a.totalKills;
+    // Tiebreaker: higher placement points ranks higher
+    return b.placementPoints - a.placementPoints;
   });
 
   const handleResetTeam = async (teamId: string, teamName: string) => {
