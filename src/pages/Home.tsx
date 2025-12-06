@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Trophy, LogIn, Target, Award } from "lucide-react";
+import { Trophy, LogIn, Target, Award, Upload } from "lucide-react";
 import Standings from "@/components/Standings";
 import { Team } from "@/types/tournament";
 
@@ -101,13 +101,24 @@ const Home = () => {
                 </p>
               </div>
             </div>
-            <Button 
-              onClick={() => navigate("/auth")} 
-              className="gap-2 btn-glow bg-gradient-primary hover:opacity-90 h-11 px-6 font-rajdhani font-bold uppercase tracking-wider"
-            >
-              <LogIn className="h-5 w-5" />
-              Enter
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => navigate("/submit-screenshot")} 
+                className="gap-2 btn-glow bg-accent hover:bg-accent/90 h-11 px-4 sm:px-6 font-rajdhani font-bold uppercase tracking-wider text-accent-foreground"
+              >
+                <Upload className="h-5 w-5" />
+                <span className="hidden sm:inline">Screenshot Submission</span>
+                <span className="sm:hidden">Submit</span>
+              </Button>
+              <Button 
+                onClick={() => navigate("/auth")} 
+                variant="outline"
+                className="gap-2 h-11 px-4 sm:px-6 font-rajdhani font-bold uppercase tracking-wider border-primary/50"
+              >
+                <LogIn className="h-5 w-5" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
