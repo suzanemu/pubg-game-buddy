@@ -12,29 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client for auth
+    // Initialize Supabase client with service role key for database operations
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get user from JWT token
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     const body = await req.json();
     const { screenshot_url, screenshot_id, team_id } = body;
@@ -46,20 +27,6 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Verify user owns this team
-    const { data: session, error: sessionError } = await supabaseClient
-      .from('sessions')
-      .select('team_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (sessionError || !session || session.team_id !== team_id) {
-      return new Response(
-        JSON.stringify({ error: "Forbidden - You can only analyze screenshots for your own team" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -189,11 +156,8 @@ Return the total team placement and total team kills.`
     const killPoints = kills;
     const totalPoints = placementPoints + killPoints;
 
-    // Use the same supabase client initialized earlier
-    const supabase = supabaseClient;
-
     // Update the screenshot record
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseClient
       .from("match_screenshots")
       .update({
         placement,
@@ -208,7 +172,7 @@ Return the total team placement and total team kills.`
     }
 
     // Fetch all screenshots for this team
-    const { data: teamScreenshots, error: fetchError } = await supabase
+    const { data: teamScreenshots, error: fetchError } = await supabaseClient
       .from("match_screenshots")
       .select("*")
       .eq("team_id", team_id);
@@ -231,7 +195,7 @@ Return the total team placement and total team kills.`
     const firstPlaceWins = teamScreenshots.filter(s => s.placement === 1).length;
 
     // Update team stats
-    const { error: teamUpdateError } = await supabase
+    const { error: teamUpdateError } = await supabaseClient
       .from("teams")
       .update({
         total_points: totalTeamPoints,
@@ -247,6 +211,8 @@ Return the total team placement and total team kills.`
       console.error("Error updating team stats:", teamUpdateError);
       throw new Error("Failed to update team stats");
     }
+
+    console.log("Successfully analyzed screenshot and updated team stats");
 
     return new Response(
       JSON.stringify({
